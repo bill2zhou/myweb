@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>备品管理</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"> 
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+  <script src="../js/jquery-1.7.2.js"></script>   
+<script src="../layui/layui.js"></script>
+<script src="/js/i18n.js"></script>
+</head>
+<body class="layui-bg-gray">
+<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
+<div class="layui-card">
+  <div class="layui-card-header">TE Manage</div>
+  <div class="layui-card-body">
+<form class="layui-form layui-form-pane1" action="" lay-filter="first">
+
+   <div class="layui-inline">
+        <label class="layui-form-label required">部門</label>
+        <div class="layui-input-block">
+            <input type="text" name="team" lay-verify="required" id="team" placeholder="部門" value="" class="layui-input">
+        </div>
+    </div>
+  
+ <br><br>
+   <div class="layui-inline">
+        <label class="layui-form-label required">物品類別</label>
+        <div class="layui-input-block">
+            <input type="text" name="cate" lay-verify="required" id="cate" placeholder="物品類別" value="" class="layui-input">
+        </div>
+    </div>
+  
+  
+  <br><br>
+   <div class="layui-inline">
+    <label class="layui-form-label">物品</label>
+    <div class="layui-input-block">
+      <input type="text" name="thing"  id="thing" lay-verify="required" placeholder="请输入物品類別" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+   
+  <br><br>
+
+  <div class="layui-inline">
+    <label class="layui-form-label">编号</label>
+    <div class="layui-input-block">
+      <input type="text" name="barcode" id="barcode"  placeholder="请输入编号*非必填*" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+  
+  <br><br>
+   <div class="layui-inline">
+    <label class="layui-form-label">型號</label>
+    <div class="layui-input-block">
+      <input type="text" name="model" id="model"   lay-verify="required" placeholder="请输入物品型號" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+
+   <br><br>
+  
+    <div class="layui-inline">
+    <label class="layui-form-label">数量</label>
+    <div class="layui-input-block">
+      <input type="text" name="stock" id="stock" lay-verify="required|stock"  placeholder="请输入数量" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+ <br><br>
+ 
+ 
+     <div class="layui-inline">
+    <label class="layui-form-label">安全庫存</label>
+    <div class="layui-input-block">
+      <input type="text" name="safestock" id="safestock" lay-verify="required|stock"  placeholder="请输入数量" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+ <br><br>
+ 
+      <div class="layui-inline layui-form-text">
+        <label class="layui-form-label">庫存説明</label>
+        <div class="layui-input-block">
+            <textarea name="tip" id="tip" class="layui-textarea" placeholder="请输入數據説明信息"></textarea>
+        </div>
+    </div>
+ 
+ 
+ 
+     <div class="layui-inline layui-form-text">
+        <label class="layui-form-label">备注信息</label>
+        <div class="layui-input-block">
+            <textarea name="remark" id="remark" class="layui-textarea" placeholder="请输入备注信息"></textarea>
+        </div>
+    </div>
+ 
+ <br><br>
+  <div class="layui-form-item">
+    <div class="layui-input-block">
+      <button class="layui-btn" lay-submit lay-filter="*">提交更改</button>
+      <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+    </div>
+  </div>
+</form>
+  </div>
+</div>
+
+<br><br><br>
+
+
+
+
+<script>
+
+ var query = location.search.substring(1);
+   var tm = document.getElementById("team");
+   var th = document.getElementById("thing");
+   var tc = document.getElementById("cate");
+   var ty = document.getElementById("model");
+   
+   var tsn=document.getElementById("barcode");
+   var tcnt=document.getElementById("stock");
+   var tsf=document.getElementById("safestock");
+   var ttip=document.getElementById("tip");
+   var trm=document.getElementById("remark");
+   
+ $.post("verify.php?q="+query,{},
+     function(data){
+    var obj = (typeof data === 'string' ? JSON.parse(data) : data); 
+	tm.value=obj.team;
+	th.value=obj.thing;	
+	tc.value=obj.cate;
+	ty.value=obj.type;	
+	
+	tsn.value=obj.bar;
+	tcnt.value=obj.stock;	
+	tsf.value=obj.sstock;
+	ttip.value=obj.tip;		
+	trm.value=obj.remark;
+	
+    }
+	);
+
+
+
+layui.use(['form','jquery','layer'], function(){
+  var form = layui.form;
+  var $=layui.jquery;
+  var layer=layui.layer;
+  
+
+  //自定义验证规则
+  form.verify({
+   
+    count: [/^\d+$/, '數量必须是数字']
+
+  });
+  
+  //事件监听
+
+  
+ 
+
+  //监听提交
+ form.on('submit(*)', function(data){
+   var rasult = JSON.stringify(data.field);
+    console.log(rasult);
+	$.post("update.php?q="+query,{name:rasult},
+     function(data){
+   // var obj = (typeof data === 'string' ? JSON.parse(data) : data); 
+     console.log(data);
+	 layer.alert("保存成功",function(){ window.close(); });	
+    });
+    return false;
+  }); 
+});
+
+
+
+
+</script>
+
+</div>
+</body>
+</html>

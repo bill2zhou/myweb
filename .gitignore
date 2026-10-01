@@ -1,0 +1,23 @@
+# 依赖与构建产物（体积大且可重新安装/重新生成）
+node_modules/
+dist/
+
+# 编辑器/IDE 数据
+.codebuddy/
+.vs/
+.vscode/
+
+# 运行期产生的文件
+data/
+log/
+*.log
+
+# 数据库与缩略图缓存
+*.db
+*.db-wal
+*.db-shm
+.seeded
+Thumbs.db
+
+# 系统文件
+.DS_Store

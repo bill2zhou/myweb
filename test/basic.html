@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测验</title>
+  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+  <script src="../layui/layui.js"></script>
+  <script src="/js/i18n.js"></script>
+</head>
+<body class="layui-bg-gray">
+
+<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
+  <div class="layui-row">
+    <div class="layui-col-md8 layui-col-md-offset2">
+      <div class="layui-card">
+        <div class="layui-card-header" id="hd">TE知識测验</div>
+        <div class="layui-card-body">
+          <div class="layui-form" id="quiz">
+            <!-- 问题将由 JavaScript 动态生成 -->
+          </div>
+          <div class="layui-form-item">
+            <button id="myBtn" type="button" class="layui-btn layui-btn-fluid" onclick="checkAnswers()">提交答案</button>
+          </div>
+          <div id="result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 定义测验问题数组
+var urlParams = new URLSearchParams(window.location.search);
+// 未带参数时也要能打开（原来直接 .toUpperCase() 会抛错导致整页白屏）
+var id = (urlParams.get('id') || '').toUpperCase();
+var level = urlParams.get('level') || '';
+var team = urlParams.get('team') || '';
+var head = level + "知识测验";
+document.getElementById("hd").innerHTML = head;
+
+send = level + "_" + team;
+
+async function loadQuizData() {
+  try {
+    const response = await fetch('../test/getdata.php?q=' + send);
+    const quizData = await response.json();
+    console.log('数据:', quizData);
+    return quizData;
+  } catch (error) {
+    console.error('请求失败:', error);
+  }
+}
+
+loadQuizData().then(data => {
+  quizData = data;
+  const quizContainer = document.getElementById('quiz');
+  data.forEach((item, index) => {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'layui-elem-quote';
+    questionDiv.textContent = item.question;
+    quizContainer.appendChild(questionDiv);
+
+    item.options.forEach(option => {
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = `q${index + 1}`;
+      radio.value = option.charAt(0); // 取选项首字母作为值（A/B/C/D）
+      radio.title = option;           // layui 用 title 渲染单选按钮文字
+      quizContainer.appendChild(radio);
+    });
+  });
+
+  // 交由 layui 渲染单选按钮
+  layui.use('form', function () {
+    layui.form.render('radio');
+  });
+});
+
+// 检查答案并计算分数
+function checkAnswers() {
+  let score = 0;
+  loadQuizData().then(data => {
+    const totalQuestions = data.length;
+    data.forEach((item, index) => {
+      const selectedOption = document.querySelector(`input[name="q${index + 1}"]:checked`);
+
+      // 显示正确答案（绿色高亮）
+      document.querySelectorAll(`input[name="q${index + 1}"]`).forEach(opt => {
+        if (opt.value === item.correct) {
+          // layui 渲染后，样式元素是 input 的下一个兄弟节点
+          const box = opt.nextElementSibling || opt.parentElement;
+          if (box && box.classList) box.classList.add('layui-bg-green');
+        }
+      });
+
+      // 计分
+      if (selectedOption && selectedOption.value === item.correct) {
+        score++;
+      }
+    });
+
+    const correctPercentage = ((score / totalQuestions) * 100).toFixed(1);
+
+    let sre = level + "_" + id + "_" + correctPercentage + "_" + team;
+    fetch('../test/savescore.php?q=' + sre)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('网络响应异常');
+        }
+        return response.text();
+      })
+      .then(data => {
+        console.log('获取的数据:', data);
+        document.getElementById("myBtn").disabled = true;
+        if (data != "Sucess") {
+          alert("數據庫沒有這個工號");
+        }
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+      });
+
+    const resultDiv = document.getElementById('result');
+    const cls = score === totalQuestions ? 'layui-bg-green'
+      : (score >= totalQuestions / 2 ? 'layui-bg-orange' : 'layui-bg-red');
+
+    resultDiv.innerHTML = `
+        <div class="layui-elem-quote ${cls}">
+          <p>总分: ${score} / ${totalQuestions}</p>
+          <p>正确率: ${correctPercentage}%</p>
+          <p>${score === totalQuestions ? '优秀！全部正确！' : score >= totalQuestions / 2 ? '不错，继续努力！' : '需要加强练习哦！'}</p>
+        </div>
+      `;
+  });
+}
+</script>
+</body>
+</html>

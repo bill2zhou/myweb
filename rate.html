@@ -1,0 +1,62 @@
+<!-- downtime_widget.html：停机率看板片段（由 main.html 通过 .load() 载入） -->
+
+<!-- KPI 区域 -->
+<div class="layui-row layui-col-space15">
+  <div class="layui-col-md4">
+    <div class="layui-card">
+      <div class="layui-card-header">本周停机率</div>
+      <div class="layui-card-body">
+        <div class="layui-text"><h2 id="dw-kpi-week">--%</h2></div>
+      </div>
+    </div>
+  </div>
+  <div class="layui-col-md4">
+    <div class="layui-card">
+      <div class="layui-card-header">本月停机率</div>
+      <div class="layui-card-body">
+        <div class="layui-text"><h2 id="dw-kpi-month">--%</h2></div>
+      </div>
+    </div>
+  </div>
+  <div class="layui-col-md4">
+    <div class="layui-card">
+      <div class="layui-card-header">本年停机率</div>
+      <div class="layui-card-body">
+        <div class="layui-text"><h2 id="dw-kpi-year">--%</h2></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 图表区域 -->
+<div class="layui-row layui-col-space15">
+  <div class="layui-col-md4">
+    <div class="layui-card">
+      <div class="layui-card-header">周趋势 (近7天)</div>
+      <div class="layui-card-body">
+        <div id="dw-chart-week" style="height:250px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layui-col-md4">
+    <div class="layui-card">
+      <div class="layui-card-header">月趋势 (近30天)</div>
+      <div class="layui-card-body">
+        <div id="dw-chart-month" style="height:250px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layui-col-md4">
+    <div class="layui-card">
+      <div class="layui-card-header">年统计 (近12月)</div>
+      <div class="layui-card-body">
+        <div id="dw-chart-year" style="height:250px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--
+    注意：这里不写 <script> 标签来初始化图表。
+    初始化逻辑放在 main.html 的 initDowntimeCharts()，在片段载入完成后执行。
+-->

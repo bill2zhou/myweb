@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>数据库管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+  <script src="../layui/layui.js"></script>
+  <script src="/js/i18n.js"></script>
+</head>
+<body class="layui-bg-gray">
+
+<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
+
+  <!-- 状态与总览 -->
+  <div class="layui-card">
+    <div class="layui-card-header">数据库管理</div>
+    <div class="layui-card-body">
+      <div class="layui-form" id="overview">
+        <div class="layui-form-item" style="margin-bottom:0">
+          <div class="layui-inline">
+            <span class="layui-badge-rim">数据库文件</span>
+            <span id="dbFile" class="layui-text" style="margin-left:6px">-</span>
+          </div>
+          <div class="layui-inline">
+            <span class="layui-badge-rim">大小</span>
+            <span id="dbSize" class="layui-text" style="margin-left:6px">-</span>
+          </div>
+          <div class="layui-inline">
+            <span class="layui-badge-rim">表 / 总行数</span>
+            <span id="dbStat" class="layui-text" style="margin-left:6px">-</span>
+          </div>
+        </div>
+        <div class="layui-form-item" style="margin-bottom:0">
+          <div class="layui-inline">
+            <button type="button" class="layui-btn layui-btn-sm" id="btnExportDb">导出数据库文件 (.db)</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="btnExportSql">导出 SQL 脚本</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-warm" id="btnImport">导入</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" id="btnClear">清空数据</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="btnReload">刷新状态</button>
+          </div>
+        </div>
+      </div>
+      <!-- 每句独立成一个节点，避免中英文混排时英文单词粘在一起 -->
+      <div class="layui-elem-quote layui-text" style="margin-bottom:0">
+        <div>此页面可直接读写数据库，请谨慎操作。</div>
+        <div>清空、导入、执行 SQL 均需在弹窗中输入 CONFIRM 二次确认；操作前建议先导出数据库文件做备份。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layui-row layui-col-space15">
+    <!-- 左侧：表列表 -->
+    <div class="layui-col-md3">
+      <div class="layui-card">
+        <div class="layui-card-header">数据表</div>
+        <div class="layui-card-body" style="padding:0">
+          <!-- layui-nav-tree 的字色是近白色（为深色侧边栏设计），必须配 layui-bg-black 才可见 -->
+          <ul class="layui-nav layui-nav-tree layui-bg-black" id="tableList" lay-filter="tables"
+              style="width:100%"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：表数据 -->
+    <div class="layui-col-md9">
+      <div class="layui-card">
+        <div class="layui-card-header">
+          <span id="gridTitle">表数据</span>
+        </div>
+        <div class="layui-card-body">
+          <div class="layui-form" style="margin-bottom:10px">
+            <div class="layui-inline">
+              <input type="text" id="keyword" class="layui-input" placeholder="关键字（全部字段模糊匹配）"
+                     autocomplete="off" style="width:240px">
+            </div>
+            <div class="layui-inline">
+              <button type="button" class="layui-btn layui-btn-sm" id="btnSearch">搜索</button>
+              <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="btnResetSearch">清空条件</button>
+            </div>
+          </div>
+          <table id="grid" lay-filter="grid"></table>
+        </div>
+      </div>
+
+      <!-- SQL 执行器 -->
+      <div class="layui-card">
+        <div class="layui-card-header">SQL 执行器</div>
+        <div class="layui-card-body">
+          <textarea id="sql" class="layui-textarea" rows="4"
+                    placeholder="SELECT 语句会返回结果；其它语句（UPDATE / DELETE / ALTER / DROP…）会直接执行"></textarea>
+          <div class="layui-form" style="margin-top:10px">
+            <div class="layui-inline">
+              <input type="text" id="sqlConfirm" class="layui-input" placeholder="输入 CONFIRM 以确认执行"
+                     autocomplete="off" style="width:220px">
+            </div>
+            <div class="layui-inline">
+              <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" id="btnSql">执行</button>
+            </div>
+          </div>
+          <div id="sqlResult" class="layui-text" style="margin-top:10px;max-height:320px;overflow:auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+layui.use(['table', 'form', 'layer', 'element', 'util'], function () {
+  var table = layui.table,
+    form = layui.form,
+    layer = layui.layer,
+    element = layui.element,
+    util = layui.util,
+    $ = layui.$;
+
+  var API = '/dbadmin/api';
+  var state = { table: '', columns: [], keyword: '' };
+
+  // 脚本里拼出来的 HTML/文字用 T() 显式翻译（多语言运行时由 /js/i18n.js 提供）
+  function T(s) {
+    return (window.TE_I18N && window.TE_I18N.t) ? window.TE_I18N.t(s) : s;
+  }
+
+  /* ---------------- 通用请求 ---------------- */
+  function api(url, options) {
+    return fetch(url, options || {}).then(function (r) {
+      return r.json().catch(function () {
+        throw new Error('服务返回异常（HTTP ' + r.status + '）');
+      }).then(function (data) {
+        if (!r.ok || data.ok === false) {
+          var err = new Error(data.msg || ('请求失败（HTTP ' + r.status + '）'));
+          err.needPassword = !!data.needPassword;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+
+  function postJson(url, body) {
+    return api(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    });
+  }
+
+  function humanSize(n) {
+    if (!n && n !== 0) return '-';
+    var u = ['B', 'KB', 'MB', 'GB'], i = 0;
+    while (n >= 1024 && i < u.length - 1) { n = n / 1024; i++; }
+    return (i === 0 ? n : n.toFixed(1)) + ' ' + u[i];
+  }
+
+  function esc(v) {
+    if (v === null || v === undefined) return '';
+    return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  /* ---------------- 登录（仅远程访问需要） ---------------- */
+  function askPassword(msg) {
+    layer.prompt({
+      formType: 1,
+      title: '数据库管理需要密码',
+      maxlength: 64
+    }, function (value, index) {
+      postJson(API + '/login', { password: value }).then(function () {
+        layer.close(index);
+        layer.msg('验证通过', { icon: 1 });
+        boot();
+      }).catch(function (e) {
+        layer.msg(e.message, { icon: 2 });
+      });
+    });
+  }
+
+  /* ---------------- 概览 ---------------- */
+  function loadStatus() {
+    return api(API + '/status').then(function (d) {
+      if (!d.authorized) {
+        layer.msg(d.needPassword ? '需要密码才能管理数据库' : '数据库管理页仅允许本机访问', { icon: 2 });
+        askPassword();
+        return Promise.reject(new Error('unauthorized'));
+      }
+      $('#dbFile').text(d.db.path || '-');
+      $('#dbSize').text(humanSize(d.db.size));
+      $('#dbStat').text(d.db.tableCount + ' 张 / ' + d.db.rowCount + ' 行');
+      return d;
+    });
+  }
+
+  /* ---------------- 表列表 ---------------- */
+  function loadTables(selectFirst) {
+    return api(API + '/tables').then(function (d) {
+      var html = d.tables.map(function (t) {
+        return '<li class="layui-nav-item" data-table="' + esc(t.name) + '">' +
+          '<a href="javascript:;">' + esc(t.name) +
+          ' <span class="layui-badge layui-bg-gray">' + t.rows + '</span></a></li>';
+      }).join('');
+      $('#tableList').html(html);
+      element.render('nav');
+
+      $('#tableList').off('click').on('click', 'a', function () {
+        var name = $(this).parent().attr('data-table');
+        if (name) openTable(name);
+      });
+
+      if (selectFirst && d.tables.length) openTable(d.tables[0].name);
+      return d.tables;
+    });
+  }
+
+  /* ---------------- 打开某张表 ---------------- */
+  function openTable(name) {
+    state.table = name;
+    state.keyword = '';
+    $('#keyword').val('');
+    $('#gridTitle').text(T('表数据：') + name + ' ' + T('(点击行尾的编辑 / 删除按钮操作)'));
+
+    return api(API + '/schema?name=' + encodeURIComponent(name)).then(function (d) {
+      state.columns = d.columns;
+
+      var cols = [{
+        field: '_rowid', title: 'rowid', width: 80, sort: true, fixed: 'left'
+      }].concat(d.columns.map(function (c) {
+        return {
+          field: c.name,
+          title: c.name + (c.pk ? ' (PK)' : ''),
+          minWidth: 110,
+          sort: true,
+          templet: function (row) {
+            var v = row[c.name];
+            if (v === null || v === undefined) return '<span class="layui-badge-rim">NULL</span>';
+            var s = String(v);
+            return esc(s.length > 120 ? s.slice(0, 120) + '…' : s);
+          }
+        };
+      }));
+
+      cols.push({
+        fixed: 'right', title: T('操作'), width: 130, align: 'center',
+        templet: function () {
+          return '<a class="layui-btn layui-btn-xs" lay-event="edit">' + T('编辑') + '</a>' +
+            '<a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">' + T('删除') + '</a>';
+        }
+      });
+
+      table.render({
+        elem: '#grid',
+        id: 'grid',
+        url: API + '/table',
+        method: 'get',
+        where: { name: name, keyword: state.keyword },
+        page: true,
+        limit: 20,
+        limits: [10, 20, 50, 100, 200],
+        height: 520,
+        text: { none: T('没有数据') },
+        toolbar: '<div class="layui-btn-container">' +
+          '<button class="layui-btn layui-btn-sm" lay-event="add">' + T('新增行') + '</button>' +
+          '<button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="csv">' + T('导出本表 CSV') + '</button>' +
+          '<button class="layui-btn layui-btn-sm layui-btn-primary" lay-event="refresh">' + T('刷新') + '</button>' +
+          '</div>',
+        defaultToolbar: [],
+        cols: [cols],
+        parseData: function (res) {
+          if (res && res.code === 0) return res;
+          return { code: 1, msg: (res && res.msg) || '加载失败', count: 0, data: [] };
+        }
+      });
+
+      table.on('toolbar(grid)', function (obj) {
+        if (obj.event === 'add') openEditor(null);
+        if (obj.event === 'refresh') reloadGrid();
+        if (obj.event === 'csv') {
+          window.location.href = API + '/export?format=csv&name=' + encodeURIComponent(state.table);
+        }
+      });
+
+      table.on('tool(grid)', function (obj) {
+        if (obj.event === 'edit') openEditor(obj.data);
+        if (obj.event === 'del') deleteRow(obj.data);
+      });
+    }).catch(function (e) {
+      layer.msg(e.message, { icon: 2 });
+      throw e;
+    });
+  }
+
+  function reloadGrid() {
+    if (!state.table) return;
+    table.reload('grid', {
+      where: { name: state.table, keyword: state.keyword },
+      page: { curr: 1 }
+    });
+  }
+
+  /* ---------------- 行编辑弹窗 ---------------- */
+  function openEditor(row) {
+    var isNew = !row;
+    var html = '<div class="layui-form" lay-filter="rowform" style="padding:18px 25px 0 0">';
+    state.columns.forEach(function (c) {
+      var val = isNew ? '' : row[c.name];
+      val = (val === null || val === undefined) ? '' : val;
+      var isPk = !!c.pk;
+      if (isNew && isPk) return; // 新增时不填主键，交给数据库自增
+      var isText = /TEXT|CLOB|CHAR/i.test(String(c.type || ''));
+      var verify = c.notnull && !isPk ? ' lay-verify="required"' : '';
+      var tip = isPk ? ' <span class="layui-badge-rim">主键</span>' : '';
+      html += '<div class="layui-form-item">' +
+        '<label class="layui-form-label" style="width:110px">' + esc(c.name) + tip + '</label>' +
+        '<div class="layui-input-block" style="margin-left:140px">';
+      if (isText && String(val).length > 40) {
+        html += '<textarea name="' + esc(c.name) + '" class="layui-textarea"' + verify + '>' + esc(val) + '</textarea>';
+      } else {
+        html += '<input type="text" name="' + esc(c.name) + '" class="layui-input" value="' + esc(val) + '"' + verify + ' autocomplete="off">';
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    layer.open({
+      type: 1,
+      title: (isNew ? '新增行 — ' : '编辑行 — ') + state.table,
+      area: ['680px', '80%'],
+      content: html,
+      btn: ['保存', '取消'],
+      success: function () { form.render(); },
+      yes: function (index) {
+        var $form = $('#layui-layer' + index).find('form');
+        var values = {};
+        state.columns.forEach(function (c) {
+          var $el = $form.find('[name="' + c.name + '"]');
+          if (!$el.length) return;
+          values[c.name] = $el.val();
+        });
+        var body = isNew
+          ? { table: state.table, action: 'insert', values: values }
+          : { table: state.table, action: 'update', rowid: row._rowid, values: values };
+
+        postJson(API + '/row', body).then(function (r) {
+          layer.close(index);
+          layer.msg('已保存（影响 ' + r.changes + ' 行）', { icon: 1 });
+          reloadGrid();
+          loadTables();
+        }).catch(function (e) { layer.msg(e.message, { icon: 2 }); });
+      }
+    });
+  }
+
+  function deleteRow(row) {
+    layer.confirm('确定删除 rowid = ' + row._rowid + ' 的记录？', { icon: 3, title: '删除确认' }, function (idx) {
+      postJson(API + '/row', { table: state.table, action: 'delete', rowid: row._rowid })
+        .then(function (r) {
+          layer.close(idx);
+          layer.msg('已删除（影响 ' + r.changes + ' 行）', { icon: 1 });
+          reloadGrid();
+          loadTables();
+        }).catch(function (e) { layer.msg(e.message, { icon: 2 }); });
+    });
+  }
+
+  /* ---------------- 清空 ---------------- */
+  $('#btnClear').on('click', function () {
+    api(API + '/tables').then(function (d) {
+      var html = '<div style="padding:15px 20px">' +
+        '<div class="layui-elem-quote layui-text">勾选要清空的表（会同时重置自增序号，操作不可撤销）</div>' +
+        '<div class="layui-form"><div class="layui-form-item"><div class="layui-input-block" style="margin-left:0">' +
+        '<input type="checkbox" lay-skin="primary" lay-filter="all" title="全部表" checked>' +
+        '</div></div>' +
+        '<div class="layui-form-item"><div class="layui-input-block" style="margin-left:0">' +
+        d.tables.map(function (t) {
+          return '<input type="checkbox" lay-skin="primary" class="tb" value="' + esc(t.name) + '" title="' +
+            esc(t.name) + '（' + t.rows + ' 行）" checked>';
+        }).join('') +
+        '</div></div>' +
+        '<div class="layui-form-item"><label class="layui-form-label" style="width:90px">确认口令</label>' +
+        '<div class="layui-input-block" style="margin-left:120px">' +
+        '<input type="text" id="clearConfirm" class="layui-input" placeholder="输入 CONFIRM" autocomplete="off">' +
+        '</div></div></div></div>';
+
+      layer.open({
+        type: 1, title: '清空数据', area: ['560px', '70%'], content: html,
+        btn: ['确定清空', '取消'],
+        success: function () { form.render(); },
+        yes: function (index) {
+          var confirmText = $('#clearConfirm').val();
+          var sel = [];
+          $('#layui-layer' + index).find('input.tb:checked').each(function () { sel.push($(this).val()); });
+          if (!sel.length) return layer.msg('请至少选择一张表', { icon: 2 });
+
+          postJson(API + '/clear', { tables: sel, confirm: confirmText }).then(function (r) {
+            layer.close(index);
+            layer.msg('已清空 ' + r.cleared.length + ' 张表', { icon: 1 });
+            boot(true);
+          }).catch(function (e) { layer.msg(e.message, { icon: 2 }); });
+        }
+      });
+    }).catch(function (e) { layer.msg(e.message, { icon: 2 }); });
+  });
+
+  /* ---------------- 导入 ---------------- */
+  $('#btnImport').on('click', function () {
+    var html = '<div style="padding:15px 20px">' +
+      '<div class="layui-elem-quote layui-text">' +
+      '<b>.db / .sqlite</b>：整个数据库文件替换（原数据全部丢弃）<br>' +
+      '<b>.sql</b>：SQL 脚本导入（脚本里已有的表会被覆盖，其它表保留）' +
+      '</div>' +
+      '<div class="layui-form">' +
+      '<div class="layui-form-item"><label class="layui-form-label" style="width:90px">选择文件</label>' +
+      '<div class="layui-input-block" style="margin-left:120px">' +
+      '<input type="file" id="importFile" accept=".db,.sqlite,.sqlite3,.db3,.sql,.txt" class="layui-input" style="padding:4px 8px">' +
+      '</div></div>' +
+      '<div class="layui-form-item"><label class="layui-form-label" style="width:90px">确认口令</label>' +
+      '<div class="layui-input-block" style="margin-left:120px">' +
+      '<input type="text" id="importConfirm" class="layui-input" placeholder="输入 CONFIRM" autocomplete="off">' +
+      '</div></div></div></div>';
+
+    layer.open({
+      type: 1, title: '导入数据库', area: ['600px', 'auto'], content: html,
+      btn: ['开始导入', '取消'],
+      yes: function (index) {
+        var f = document.getElementById('importFile').files[0];
+        if (!f) return layer.msg('请先选择文件', { icon: 2 });
+        var confirmText = $('#importConfirm').val();
+
+        var load = layer.load(2, { shade: 0.3 });
+        fetch(API + '/import?confirm=' + encodeURIComponent(confirmText) +
+          '&filename=' + encodeURIComponent(f.name), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: f
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          layer.close(load);
+          if (d.ok === false) return layer.msg(d.msg || '导入失败', { icon: 2 });
+          layer.close(index);
+          layer.alert(d.msg, { icon: 1 }, function () { boot(true); });
+        }).catch(function (e) {
+          layer.close(load);
+          layer.msg('导入失败：' + e.message, { icon: 2 });
+        });
+      }
+    });
+  });
+
+  /* ---------------- 导出 ---------------- */
+  $('#btnExportDb').on('click', function () {
+    window.location.href = API + '/export?format=db';
+  });
+  $('#btnExportSql').on('click', function () {
+    window.location.href = API + '/export?format=sql';
+  });
+
+  /* ---------------- SQL 执行器 ---------------- */
+  $('#btnSql').on('click', function () {
+    var sql = $('#sql').val().trim();
+    if (!sql) return layer.msg('请输入 SQL', { icon: 2 });
+    var confirmText = $('#sqlConfirm').val();
+
+    layer.confirm('确定执行下面的 SQL？<pre style="margin-top:8px;white-space:pre-wrap">' + esc(sql) + '</pre>',
+      { title: 'SQL 执行确认', icon: 3, area: '620px' }, function (idx) {
+        layer.close(idx);
+        postJson(API + '/sql', { sql: sql, confirm: confirmText }).then(function (d) {
+          if (d.kind === 'query') {
+            var cols = d.rows.length ? Object.keys(d.rows[0]) : [];
+            var html = '<div class="layui-text">返回 ' + d.count + ' 行（最多显示 500 行）</div>' +
+              '<table class="layui-table" lay-even style="margin-top:8px"><thead><tr>' +
+              cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') +
+              '</tr></thead><tbody>' +
+              d.rows.map(function (r) {
+                return '<tr>' + cols.map(function (c) {
+                  var v = r[c];
+                  return '<td>' + (v === null || v === undefined ? '<span class="layui-badge-rim">NULL</span>' : esc(v)) + '</td>';
+                }).join('') + '</tr>';
+              }).join('') + '</tbody></table>';
+            $('#sqlResult').html(html);
+          } else {
+            $('#sqlResult').html('<div class="layui-elem-quote layui-text">' + esc(d.msg || '执行完成') + '</div>');
+            layer.msg('执行完成', { icon: 1 });
+            boot(true);
+          }
+        }).catch(function (e) {
+          $('#sqlResult').html('<div class="layui-elem-quote layui-text" style="color:#FF5722">' + esc(e.message) + '</div>');
+          layer.msg(e.message, { icon: 2 });
+        });
+      });
+  });
+
+  /* ---------------- 搜索 ---------------- */
+  function doSearch() {
+    if (!state.table) return layer.msg('请先选择一张表', { icon: 2 });
+    state.keyword = $('#keyword').val().trim();
+    reloadGrid();
+  }
+  $('#btnSearch').on('click', doSearch);
+  $('#btnResetSearch').on('click', function () { $('#keyword').val(''); doSearch(); });
+  $('#keyword').on('keydown', function (e) { if (e.keyCode === 13) doSearch(); });
+
+  $('#btnReload').on('click', function () { boot(); });
+
+  /* ---------------- 启动 ---------------- */
+  function boot(keepTable) {
+    var current = keepTable ? state.table : '';
+    return loadStatus().then(function () {
+      return loadTables(!current);
+    }).then(function (tables) {
+      if (current && tables.some(function (t) { return t.name === current; })) {
+        openTable(current);
+      }
+    }).catch(function () { /* 未授权时已提示 */ });
+  }
+
+  boot();
+});
+</script>
+</body>
+</html>

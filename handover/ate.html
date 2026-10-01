@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta http-equiv="refresh" content="1800;url=index.html">
+  <title>ATE 交接</title>
+  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+  <script src="../layui/layui.js"></script>
+  <script src="/js/i18n.js"></script>
+  <script>
+layui.use(['form', 'laydate'], function () {
+  var laydate = layui.laydate;
+  var form = layui.form;
+
+  laydate.render({ elem: '#StartTime' });
+  laydate.render({ elem: '#EndTime' });
+  form.render();
+});
+
+// 页面载入即查询近两天的交接记录
+if (window.XMLHttpRequest) {
+  xmlhttp = new XMLHttpRequest();
+}
+else {
+  xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+}
+xmlhttp.onreadystatechange = function () {
+  if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+    document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
+  }
+}
+xmlhttp.open("POST", "seach1.php", true);
+xmlhttp.send();
+
+function Serach() {
+  var st = StartTime.value;
+  var et = EndTime.value;
+  var sf = document.getElementById("shift").value;
+  var str = st + "_" + sf + "_" + et;
+
+  if (window.XMLHttpRequest) {
+    xmlhttp = new XMLHttpRequest();
+  }
+  else {
+    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+      document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
+    }
+  }
+  xmlhttp.open("POST", "seach.php?q=" + str, true);
+  xmlhttp.send();
+}
+
+function Vdelete() {
+  var st = StartTime.value;
+  var et = EndTime.value;
+  var sf = document.getElementById("shift").value;
+  var str = st + "_" + sf + "_" + et;
+
+  if (window.XMLHttpRequest) {
+    xmlhttp = new XMLHttpRequest();
+  }
+  else {
+    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+      document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
+    }
+  }
+  xmlhttp.open("POST", "read_del.php?q=" + str, true);
+  xmlhttp.send();
+}
+
+function Update() {
+  var st = StartTime.value;
+  var et = EndTime.value;
+  var sf = document.getElementById("shift").value;
+  var str = st + "_" + sf + "_" + et;
+
+  if (window.XMLHttpRequest) {
+    xmlhttp = new XMLHttpRequest();
+  }
+  else {
+    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+      document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
+    }
+  }
+  xmlhttp.open("POST", "read_up.php?q=" + str, true);
+  xmlhttp.send();
+}
+
+function Creat() {
+  window.open('from.html', 'newwindow', 'height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
+}
+
+function change(a) {
+  window.open('change.html?q=' + a, 'newwindow', 'height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
+}
+  </script>
+</head>
+<body class="layui-bg-gray">
+
+<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
+  <div class="layui-card">
+    <div class="layui-card-header">ATE 交接記錄</div>
+    <div class="layui-card-body">
+      <div class="layui-form">
+        <div class="layui-form-item">
+          <div class="layui-inline">
+            <label class="layui-form-label" style="width:60px">日期起</label>
+            <div class="layui-input-inline" style="width:150px">
+              <input id="StartTime" type="text" class="layui-input" placeholder="开始日期" autocomplete="off">
+            </div>
+          </div>
+          <div class="layui-inline">
+            <label class="layui-form-label" style="width:40px">止</label>
+            <div class="layui-input-inline" style="width:150px">
+              <input id="EndTime" type="text" class="layui-input" placeholder="结束日期" autocomplete="off">
+            </div>
+          </div>
+          <div class="layui-inline">
+            <label class="layui-form-label" style="width:60px">班別</label>
+            <div class="layui-input-inline" style="width:110px">
+              <select name="SHIFT" id="shift">
+                <option value="">班別:</option>
+                <option value="D">day</option>
+                <option value="N">night</option>
+              </select>
+            </div>
+          </div>
+          <div class="layui-inline">
+            <button id="btn-search" type="button" class="layui-btn layui-btn-sm" onclick="Serach()">查询记录</button>
+            <button id="btn-create" type="button" class="layui-btn layui-btn-sm layui-btn-normal" onclick="Creat()">新建交接記錄</button>
+            <button id="btn-update" type="button" class="layui-btn layui-btn-sm layui-btn-warm" onclick="Update()">修改</button>
+            <button id="btn-delete" type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="Vdelete()">刪除交接記錄</button>
+          </div>
+        </div>
+      </div>
+      <div id="txtHint" class="layui-text" style="min-height:600px">请选择日期班別...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function delet(a) {
+  var rtn = confirm("是否確定刪除？");
+  var st = StartTime.value;
+  var et = EndTime.value;
+  var sf = document.getElementById("shift").value;
+  var str = st + "_" + sf + "_" + et;
+
+  if (window.XMLHttpRequest) {
+    xmlhttp = new XMLHttpRequest();
+  }
+  else {
+    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+
+  xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+      repost = new XMLHttpRequest();
+
+      repost.onreadystatechange = function () {
+        if (repost.readyState == 4 && repost.status == 200) {
+          document.getElementById("txtHint").innerHTML = repost.responseText;
+        }
+      }
+      repost.open("POST", "read_del.php?q=" + str, true);
+      repost.send();
+    }
+  }
+
+  if (rtn) {
+    xmlhttp.open("POST", "delet.php?q=" + a, true);
+    xmlhttp.send();
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>故障记录</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"> 
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+
+  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+
+</head>
+<body class="layui-bg-gray">
+<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
+<div class="layui-card">
+  <div class="layui-card-header">TE maintain</div>
+  <div class="layui-card-body">
+<form class="layui-form layui-form-pane1" action="" lay-filter="first">
+    <div class="layui-inline">
+      <label class="layui-form-label">部门</label>
+      <div class="layui-input-block">
+        <select name="team" lay-filter="team"  lay-verify="required" autocomplete="off">
+          <option value="">请选择部门</option>
+          <option value="ATE">ATE</option>
+          <option value="AOI">AOI</option>
+          <option value="FT">FT</option>
+        </select>
+      </div>
+    </div>
+	<br><br>
+    <div class="layui-inline">
+      <label class="layui-form-label">站别</label>
+      <div class="layui-input-block">
+        <select name="station"  lay-filter="station" id="station" lay-verify="required" autocomplete="off">
+            <option value="">请选择站别</option>
+            <option value="ATE">ATE</option>
+            <option value="ICT">ICT</option>
+        </select>
+      </div>
+    </div>
+	<br><br>
+	<div class="layui-inline">
+      <label class="layui-form-label">机台型号</label>
+      <div class="layui-input-block">
+        <select name="type" lay-filter="type" id="type" lay-verify="required" autocomplete="off">
+            <option value="">机台型号</option>
+	        <option value="I3070">I3070</option>  
+            <option value="JET300">JET300</option>      
+	        <option value="EMU">EMU</option>
+			<option value="TERADYNE">TSHL52</option>
+            <option value="ROBOT">ROBOT</option> 
+	        <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+   <br><br>
+<div class="layui-form-item">
+    <label class="layui-form-label">线别</label>
+    <div class="layui-input-block">
+      <select name="line" lay-verify="required|line" autocomplete="off">
+        <option value="">请选择线别</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+		<option value="F">F</option>
+        <option value="H">H</option>
+        <option value="I">I</option>		
+      </select>
+    </div>
+  </div>
+  <div class="layui-form-item">
+    <label class="layui-form-label">设备编号</label>
+    <div class="layui-input-block">
+      <input type="text" name="sn"   placeholder="请输入编号*非必填*" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+  <div class="layui-form-item">
+    <label class="layui-form-label">日期</label>
+    <div class="layui-input-block">
+      <input type="text" id="Adate" name="date" lay-verify="required|date"  placeholder="请输入日期" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+  
+  
+   
+  <div class="layui-form-item" id="reason">
+    <label class="layui-form-label">故障原因</label>
+    <div class="layui-input-block">
+      <select name="reason">
+        <option value="">请选择</option>
+        <option value="無系統/Config備份">無系統/Config備份</option>
+        <option value="無用資料沒有及時清理">無用資料沒有及時清理</option>
+        <option value="日常點檢不到位">日常點檢不到位</option>
+        <option value="未按流程作業">未按流程作業</option>
+        <option value="設備未按時保養">設備未按時保養</option>  
+	    <option value="環境溫濕度不達標">環境溫濕度不達標</option>		
+      </select>
+    </div>
+  </div>
+   
+  
+  
+  
+  <div class="layui-form-item layui-form-text">
+    <label class="layui-form-label">故障描述</label>
+    <div class="layui-input-block">
+      <textarea placeholder="请输入内容" class="layui-textarea" name="fa" lay-verify="required" autocomplete="off"></textarea>
+    </div>
+  </div>
+  
+
+  
+  
+  
+  <div class="layui-form-item layui-form-text">
+    <label class="layui-form-label">故障处理分析</label>
+    <div class="layui-input-block">
+      <textarea placeholder="请输入内容" class="layui-textarea" name="ca" lay-verify="required" autocomplete="off"></textarea>
+    </div>
+  </div>
+  <div class="layui-form-item">
+    <label class="layui-form-label">故障类别</label>
+    <div class="layui-input-block">
+      <select name="fault" lay-verify="required">
+        <option value="">请选择类别</option>
+        <option value="硬件">硬件</option>
+        <option value="软件">软件</option>  
+	    <option value="人员">人员</option>		
+      </select>
+    </div>
+  </div>
+  
+  
+    <div class="layui-form-item">
+    <label class="layui-form-label">维修时间</label>
+    <div class="layui-input-block">
+      <input type="text" name="time" lay-verify="required|time"  placeholder="请输入维修时间mins" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+ 
+    <div class="layui-form-item">
+    <label class="layui-form-label">积压</label>
+    <div class="layui-input-block">
+      <input type="text" name="jiya" lay-verify="required|jiya"  placeholder="请输入积压数量" autocomplete="off" class="layui-input">
+    </div>
+  </div> 
+  
+    <div class="layui-form-item">
+    <label class="layui-form-label">维修人员</label>
+    <div class="layui-input-block">
+      <input type="text" name="owner" lay-verify="required"  placeholder="请输入姓名" autocomplete="off" class="layui-input">
+    </div>
+  </div>
+  
+  <div class="layui-form-item">
+    <div class="layui-input-block">
+      <button class="layui-btn" lay-submit lay-filter="*">立即提交</button>
+      <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+    </div>
+  </div>
+</form>
+  </div>
+</div>
+
+<br><br><br>
+
+
+<script src="../layui/layui.js"></script>
+<script src="/js/i18n.js"></script>
+
+<script>
+
+layui.use(['form','jquery','layer'], function(){
+  var form = layui.form;
+  var $=layui.jquery;
+  var layer=layui.layer;
+  
+  //自定义验证规则
+  form.verify({
+   
+    time: [/^\d+$/, '时间必须是数字'],
+    jiya: [/^\d+$/, '积压必须是数字']
+  });
+  
+  //事件监听
+
+  
+  form.on('select(team)', function(data){
+    
+   var y = document.getElementById("station");
+   var z = document.getElementById("type");
+   var r = document.getElementById("reason");
+   
+   	if(data.value=="ATE")
+	{	
+	r.style.display="none";
+	}
+   
+	if(data.value=="AOI")
+	{
+	    r.style.display="block";
+	    y.options.length = 0; // 清除second下拉框的所有内容
+        z.options.length = 0;
+        y.options.add(new Option("请选择站别", ""));
+	    y.options.add(new Option("SPIS", "SPIS"));
+		y.options.add(new Option("AOIA", "AOIA"));  
+		y.options.add(new Option("SPIC", "SPIC")); 
+        y.options.add(new Option("AOIB", "AOIB"));		
+        y.options.add(new Option("目视", "目视"));
+		z.options.add(new Option("机台型号", ""));
+		z.options.add(new Option("HOLLY_SPI", "HOLLY_SPI"));
+		z.options.add(new Option("HOLLY_AOI", "HOLLY_AOI"));
+		z.options.add(new Option("XRAY", "XRAY"));
+		z.options.add(new Option("目视", "目视主机"));
+		z.options.add(new Option("Other", "Other"));
+		form.render("select");
+	}
+	
+	if(data.value=="FT")
+	{
+	    r.style.display="none";
+	    y.options.length = 0; // 清除second下拉框的所有内容
+        z.options.length = 0;
+	    y.options.add(new Option("请选择站别", ""));
+		y.options.add(new Option("S1_ROBOT", "S1_ROBOT"));
+		y.options.add(new Option("S1_轨道", "S1_轨道"));
+		y.options.add(new Option("S1_1", "S1_1"));
+		y.options.add(new Option("S1_2", "S1_2"));
+        y.options.add(new Option("S1_3", "S1_3"));
+		y.options.add(new Option("S1_4", "S1_4")); 
+        y.options.add(new Option("S1_5", "S1_5"));
+		y.options.add(new Option("S1_6", "S1_6"));
+        y.options.add(new Option("S1_7", "S1_7"));
+		y.options.add(new Option("S1_8", "S1_8")); 
+	    y.options.add(new Option("S2_ROBOT", "S2_ROBOT"));
+		y.options.add(new Option("S2_轨道", "S2_轨道"));
+		y.options.add(new Option("S2_1", "S2_1"));
+		y.options.add(new Option("S2_2", "S2_2"));
+        y.options.add(new Option("S2_3", "S2_3"));
+		y.options.add(new Option("S2_4", "S2_4")); 
+        y.options.add(new Option("S2_5", "S2_5"));
+		y.options.add(new Option("S2_6", "S2_6"));
+        y.options.add(new Option("S2_7", "S2_7"));
+		y.options.add(new Option("S2_8", "S2_8")); 
+        y.options.add(new Option("ROUTER1", "ROUTER1"));
+		y.options.add(new Option("ROUTER2", "ROUTER2")); 		
+
+      	z.options.add(new Option("机台型号", ""));
+		z.options.add(new Option("ROBOT", "ROBOT"));
+		z.options.add(new Option("测试桌", "测试桌"));
+		z.options.add(new Option("上位机", "上位机"));
+		z.options.add(new Option("治具", "治具"));
+		z.options.add(new Option("EL_router", "EL_router"));
+		z.options.add(new Option("SM_router", "SM_router"));
+		z.options.add(new Option("Other", "Other"));
+	    form.render("select");
+	}
+  });
+
+  
+   
+  //监听提交
+ form.on('submit(*)', function(data){
+   var rasult = JSON.stringify(data.field);
+   // console.log(rasult.time);
+	 $.post("../php/from.php",{name:rasult},
+     function(data){
+   // var obj = JSON.parse(data); 
+     console.log(data);
+	 layer.alert("保存成功",function(){ window.close(); });	
+    });
+    return false;
+  }); 
+});
+
+layui.use('laydate', function(){
+  var laydate = layui.laydate; 
+  //执行一个laydate实例
+  laydate.render({
+    elem: '#Adate' //指定元素
+	,theme: 'molv'
+  });
+});
+
+</script>
+
+</div>
+</body>
+</html>

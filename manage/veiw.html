@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>备品管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+    <script src="../js/jquery-1.7.2.js"></script>
+    <script src="../layui/layui.js"></script>
+    <script src="/js/i18n.js"></script>
+</head>
+<body class="layui-bg-gray">
+<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
+  <div class="layui-card">
+    <div class="layui-card-header">説明</div>
+    <div class="layui-card-body">
+      <pre name="remark" id="veiw" class="layui-text" style="font-size:16px;white-space:pre-wrap;word-break:break-all"></pre>
+    </div>
+  </div>
+</div>
+<script>
+// 说明内容取自 manage 表的 tip 字段，该字段允许为空：
+// 有不少物品压根没填说明，这时以前会弹出一个完全空白的框，看着像坏了。
+var query = location.search.substring(1);
+var y = document.getElementById("veiw");
+var T = function (s) { return (window.TE_I18N && window.TE_I18N.t) ? window.TE_I18N.t(s) : s; };
+
+function render(text, isEmpty) {
+  y.textContent = text;
+  y.style.color = isEmpty ? '#999' : '';
+}
+
+$.post("veiw.php?q=" + query, {}, function (data) {
+  var tip = '';
+  try {
+    var obj = (typeof data === 'string' ? JSON.parse(data) : data);
+    var arr = obj && obj.tip;              // 接口返回的是数组
+    if (Object.prototype.toString.call(arr) === '[object Array]' && arr.length) {
+      tip = String(arr[0] || '').trim();
+    }
+  } catch (e) { tip = ''; }
+  render(tip ? tip : T('该物品暂未填写说明'), true);
+}).fail(function () {
+  render(T('说明加载失败，请重试'), true);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,559 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>仁宝电脑--TE</title>
+<link rel="stylesheet" href="layui/css/layui.css">
+<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+<script src="../js/jquery-1.7.2.js"></script>
+<script src="../js/highcharts.js"></script> 
+
+</head>
+<body class="layui-layout-body">
+
+<script> 
+
+            function initDowntimeCharts() {
+                console.log("初始化停机率图表...");
+
+                // --- 模拟数据生成 ---
+                $.getJSON('../php/get_downtime_data.php', function(response) {
+                if (response.status !== 'success') {
+                    console.error('数据获取失败');
+                    return;
+                }
+
+                const data = response.data;
+
+                // 更新 KPI
+                $('#dw-kpi-week').text(data.week.avg + '%');
+                $('#dw-kpi-month').text(data.month.avg + '%');
+                $('#dw-kpi-year').text(data.year.avg + '%');
+
+                // 通用图表配置
+                const commonConfig = {
+                    chart: { backgroundColor: 'transparent' },
+                    title: { text: null },
+                    xAxis: { crosshair: true },
+                    yAxis: { title: { text: null }, labels: { format: '{value}%' } },
+                    tooltip: { pointFormat: '{point.y:.2f} %' },
+                    credits: { enabled: false },
+                    plotOptions: { series: { marker: { enabled: false } } }
+                };
+
+                // 渲染周图表
+                Highcharts.chart('dw-chart-week', Highcharts.merge(commonConfig, {
+                    chart: { type: 'areaspline' },
+                    colors: ['#3498db'],
+                    xAxis: { categories: data.week.labels },
+                    series: [{ name: '停机率', data: data.week.values, fillOpacity: 0.3 }]
+                }));
+
+                // 渲染月图表
+                Highcharts.chart('dw-chart-month', Highcharts.merge(commonConfig, {
+                    chart: { type: 'line' },
+                    colors: ['#2ecc71'],
+                    xAxis: { categories: data.month.labels },
+                    series: [{ name: '停机率', data: data.month.values }]
+                }));
+
+                // 渲染年图表
+                Highcharts.chart('dw-chart-year', Highcharts.merge(commonConfig, {
+                    chart: { type: 'column' },
+                    colors: ['#9b59b6'],
+                    xAxis: { categories: data.year.labels },
+                    series: [{ name: '平均停机率', data: data.year.values }]
+                }));
+                
+                });
+            }
+
+function dataserach()
+{
+let newurl="";
+let hostname="";
+ hostname = window.location.hostname;
+ console.log(hostname);
+ newurl="http://"+hostname+":2016";
+  console.log(newurl);
+ window.open(newurl,"_blank");
+}
+function fpy(){
+ $.post("php/DailyFpy.php",{},
+     function(data){
+     console.log(data) ;  
+	 var obj = (typeof data === 'string' ? JSON.parse(data) : data); 
+	 chart(obj);
+	 chart2(obj);
+	 $('#chart3').html("");
+	 $('#part').html("");
+	 $('#ict').html("");
+    });
+
+}
+function stop(){
+ $.post("php/maintain.php",{},
+     function(data){
+	 var obj = (typeof data === 'string' ? JSON.parse(data) : data); 
+	 chart3(obj);
+	 chart4(obj);
+	 chart5(obj);
+	  $('#part').load("rate.html", function(response, status, xhr) {
+                if (status == "error") {
+                    $(this).html("加载失败: " + xhr.status + " " + xhr.statusText);
+                } else {
+                    initDowntimeCharts();
+                }
+	  });
+	  $('#ict').html("");
+    });
+}
+
+function checklist(){
+
+  $('#chart1').html("");
+  $('#chart2').html("");
+ $('#part').html("ATE日常點檢表")
+ $('#ict').html(' <a target="_blank" href="../form/program.html" style="color:blue" >SPI/AOI/ATE/ICT測試程式修改記錄表</a>  <br><hr>\
+ <a target="_blank" href="../form/jig.html" style="color:blue" >INLINE ATE治具點檢表</a>  <br><hr>\
+ <a target="_blank" href="../form/daily.html" style="color:blue" >INLINE ATE每日开线點檢表</a>  <br><hr>\
+ ');
+}
+
+</script>
+<div class="layui-layout layui-layout-admin">
+  <div class="layui-header">
+    <div class="layui-logo"><a href="/">TE-SERVER1</a></div>
+    <!-- 头部区域（可配合layui已有的水平导航） -->
+    <ul class="layui-nav layui-layout-left">
+      <li class="layui-nav-item"><a target="_blank" href="maintain/index.html">设备维护</a></li>
+      <li class="layui-nav-item"><a target="_blank" href="manage/index.html">备品管理</a></li>
+      <li class="layui-nav-item"><a target="_blank" href="ntf.html">良率改善</a></li>
+      <li class="layui-nav-item"><a target="_blank" href="dbadmin/">数据库管理</a></li>
+      <li class="layui-nav-item">
+        <a href="javascript:;">其它系统</a>
+        <dl class="layui-nav-child">
+          <dd><a target="_blank" href="../html/expert/index.html">TE高级教程</a></dd>
+          <dd><a target="_blank" href="../html/index.html">TE教育训练</a></dd>
+          <dd><a target="_blank" href="../test/index.html">測驗</a></dd>
+        </dl>
+      </li>
+    </ul>
+    <ul class="layui-nav layui-layout-right">
+      <li class="layui-nav-item">
+		<button id="login1" class="layui-btn demo" data-type="login">Login</button>
+        <dl class="layui-nav-child">
+          <dd><a href="">基本资料</a></dd>
+          <dd><a href="">安全设置</a></dd>
+        </dl>
+      </li>
+      <li class="layui-nav-item"><button class="layui-btn demo" data-type="logout" href="index.html">退出</button></li>
+    </ul>
+  </div>
+  
+  <div class="layui-side layui-bg-black">
+    <div class="layui-side-scroll">
+      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+      <ul class="layui-nav layui-nav-tree"  lay-filter="test">
+        <li class="layui-nav-item layui-nav-itemed">
+          <a  href="javascript:;">常用</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:fpy();">良率</a></dd>
+            <dd><a href="javascript:stop();" data-type="test">停机率</a></dd>
+            <dd><a href="javascript:checklist();">點檢表</a></dd>	
+			<dd><a target="_blank" href="../handover/ate.html">交接</a></dd>
+			<dd><a target="_blank" href="../search/index.html">查找</a></dd>
+            <dd><a href="javascript:dataserach();">測試資料查詢</a></dd>	
+          </dl>
+        </li>
+        <li class="layui-nav-item">
+          <a href="javascript:;">其它</a>
+          <dl class="layui-nav-child">
+            <dd><a target="_blank"  href="../test/add.html">测试题库添加</a></dd>
+            <dd><a target="_blank" href="../test/chart_score.php">ATE测试分数</a></dd>
+            <dd><a href="">FT</a></dd>
+          </dl>
+        </li>
+		    <li class="layui-nav-item">
+          <a href="javascript:;">文件</a>
+          <dl class="layui-nav-child">
+            <dd><a href="../QPA/2020.xls">ATE備品管理-2020</a></dd>
+            <dd><a href="../QPA/List.xls">ATE设备功率参数 List  </a></dd>
+            <dd><a href="../QPA/ATE.xls">ATE設備統計表-ICT-ATE</a></dd>
+          </dl>
+        </li>
+		
+		
+		
+		
+      </ul>
+    </div>
+  </div>
+  
+  <div class="layui-body">
+    <!-- 内容主体区域 -->
+	<div id="summary" >
+	<h2 id="part" style="text-align:center">公告</h2>
+<br>
+	</div>
+	<div id="ict" style="width: 650px; height: 200px; margin: 0 auto;"></div> 
+    <div id="chart1" style="width: 650px; height: 400px; margin: 0 auto"></div>  
+	<div id="chart2" style="width: 650px; height: 400px; margin: 0 auto"></div>  
+	<div id="chart3" style="width: 650px; height: 400px; margin: 0 auto"></div> 
+  </div>
+  
+  <div class="layui-footer">
+    <!-- 底部固定区域 -->   
+  </div>
+</div>
+<script src="layui/layui.js"></script>
+<script src="/js/i18n.js"></script>
+<script>
+	/**
+async  function checklink(link){
+try {
+let response = await fetch (link.href,{method:'HEAD'});
+if(!response.ok){
+ throw new Error('link not reachable');
+}
+return true;
+}
+catch(error)
+{
+console.log(error);
+return false;
+}
+}
+(async () => {
+const linkelement=document.getElementById('mianlink');
+const isReachable = await checklink(linkelement);
+if(!isReachable)
+{
+linkelement.href = "http://10.134.38.15";
+linkelement.textContent="ATE測試資料查詢(OA)";
+}
+})();
+**/
+
+ $('#login1').html("ATE");
+ 
+layui.use('element', function(){
+  var element = layui.element; 
+});
+layui.use('layer', function(){
+  var $ = layui.jquery, layer = layui.layer; //独立版的layer无需执行这一句
+  var active = {
+  login: function(){
+      layer.prompt({title: '输入工号，并确认', formType: 1}, function(pass, index){
+      layer.close(index);	  
+	  $('#login1').html(pass);
+      });
+    }
+  };
+   $('.demo').on('click', function(){
+    var type = $(this).data('type');
+    active[type] ? active[type].call(this) : '';
+  }); 
+ });
+
+function chart(recvice) {   
+   var Mydate= new Date();
+   
+   var title = {
+      text: '每日平均良率'   
+   };
+   var subtitle = {
+      text: 'Date:'+recvice.Dates[0]
+   };
+   var xAxis = {
+      categories: [recvice.Dates[6],recvice.Dates[5],recvice.Dates[4],recvice.Dates[3],recvice.Dates[2],recvice.Dates[1],recvice.Dates[0]]
+   };
+   var yAxis = {
+      title: {
+         text: '(%)'
+      }
+   };
+   var plotOptions = {
+      line: {
+         dataLabels: {
+            enabled: true
+         },   
+         enableMouseTracking: true
+      }
+   };
+   var series= [{
+        name: 'ATE',
+         data: [Number(recvice.ATE[6]),Number(recvice.ATE[5]),Number(recvice.ATE[4]),Number(recvice.ATE[3]),Number(recvice.ATE[2]),Number(recvice.ATE[1]),Number(recvice.ATE[0])]
+        }/*,{
+	   name: 'AOI',
+         data: [Number(recvice.aoifpy[6]),Number(recvice.aoifpy[5]),Number(recvice.aoifpy[4]),Number(recvice.aoifpy[3]),Number(recvice.aoifpy[2]),Number(recvice.aoifpy[1]),Number(recvice.aoifpy[0])]
+        },{
+       name: 'FT',
+         data: [Number(recvice.FT[6]),Number(recvice.FT[5]),Number(recvice.FT[4]),Number(recvice.FT[3]),Number(recvice.FT[2]),Number(recvice.FT[1]),Number(recvice.FT[0])]
+		
+        }	 */
+		
+		
+   ];  
+   var json = {};
+   json.title = title;
+   json.subtitle = subtitle;
+   json.xAxis = xAxis;
+   json.yAxis = yAxis;  
+   json.series = series;
+   json.plotOptions = plotOptions;
+   $('#chart1').highcharts(json);
+  
+}
+function chart5(recvice) {   
+   var Mydate= new Date();
+   
+   var title = {
+      text: '各线停机率'   
+   };
+   var subtitle = {
+      text: 'Date:'+recvice.Dates[0]
+   };
+   var xAxis = {
+     categories: ['A','B','C','D','E','G','H','I']
+    };
+   var yAxis = {
+      title: {
+         text: '(%)'
+      }
+   };
+   var plotOptions = {
+      line: {
+         dataLabels: {
+            enabled: true
+         },   
+         enableMouseTracking: true
+      }
+   };
+   var series= [{
+        name: 'ATE',
+              data: [Number(recvice.ATE_V['A']),Number(recvice.ATE_V['B']),Number(recvice.ATE_V['C']),Number(recvice.ATE_V['D']),Number(recvice.ATE_V['E']),Number(recvice.ATE_V['G']),Number(recvice.ATE_V['H']),Number(recvice.ATE_V['I'])]
+        },{
+	  name: 'AOI',
+              data: [Number(recvice.AOI_V['A']),Number(recvice.AOI_V['B']),Number(recvice.AOI_V['C']),Number(recvice.AOI_V['D']),Number(recvice.AOI_V['E']),Number(recvice.AOI_V['G']),Number(recvice.AOI_V['H']),Number(recvice.AOI_V['I'])]
+        },{
+	  name: 'FT',
+              data: [Number(recvice.FT_V['A']),Number(recvice.FT_V['B']),Number(recvice.FT_V['C']),Number(recvice.FT_V['D']),Number(recvice.FT_V['E']),Number(recvice.FT_V['G']),Number(recvice.FT_V['H']),Number(recvice.FT_V['I'])]
+        }
+		
+   ];  
+   var json = {};
+   json.title = title;
+   json.subtitle = subtitle;
+   json.xAxis = xAxis;
+   json.yAxis = yAxis;  
+   json.series = series;
+   json.plotOptions = plotOptions;
+   $('#chart1').highcharts(json);
+  
+}
+function chart2(recvice) {  
+   var chart = {
+      type: 'column'
+   };
+   var title = {
+      text: '各线良率'   
+   };
+   var subtitle = {
+      text: 'Date:'+recvice.Dates[0]
+   };
+   var xAxis = {
+      categories: ['A','B','C','D','E','G','H','I'],
+      crosshair: true
+   };
+   var yAxis = {
+      min: 0,
+      title: {
+         text: '百分比'         
+      }      
+   };
+   var tooltip = {
+      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+      pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+         '<td style="padding:0"><b>{point.y:.2f} %</b></td></tr>',
+      footerFormat: '</table>',
+      shared: true,
+      useHTML: true
+   };
+   var plotOptions = {
+      column: {
+         pointPadding: 0.2,
+         borderWidth: 0,
+		  dataLabels: {
+            enabled: true
+         }
+      }
+	  
+   };  
+   var credits = {
+      enabled: false
+   };
+   
+   var series= [{
+        name: 'ATE',
+              data: [Number(recvice.line_fpy[0]),Number(recvice.line_fpy[1]),Number(recvice.line_fpy[2]),Number(recvice.line_fpy[3]),Number(recvice.line_fpy[4]),Number(recvice.line_fpy[5]),Number(recvice.line_fpy[6]),Number(recvice.line_fpy[7])]
+        }/*,{
+	    name: 'AOIA',
+              data: [Number(recvice.aoia[0]),Number(recvice.aoia[1]),Number(recvice.aoia[2]),Number(recvice.aoia[3]),Number(recvice.aoia[4]),Number(recvice.aoia[5]),0,0]
+        },{
+	    name: 'AOIB',
+              data: [Number(recvice.aoib[0]),Number(recvice.aoib[1]),Number(recvice.aoib[2]),Number(recvice.aoib[3]),Number(recvice.aoib[4]),Number(recvice.aoib[5]),0,0]
+        }
+		*/
+		];     
+      
+   var json = {};   
+   json.chart = chart; 
+   json.title = title;   
+   json.subtitle = subtitle; 
+   json.tooltip = tooltip;
+   json.xAxis = xAxis;
+   json.yAxis = yAxis;  
+   json.series = series;
+   json.plotOptions = plotOptions;  
+   json.credits = credits;
+   $('#chart2').highcharts(json); 
+}
+function chart3(recvice) {  
+   var chart = {
+      type: 'column'
+   };
+   var title = {
+      text: '各线停线次数'   
+   };
+   var subtitle = {
+      text: 'Date:'+recvice.Dates[6]+"--"+recvice.Dates[0]
+   };
+   var xAxis = {
+      categories: ['A','B','C','D','E','G','H','I'],
+      crosshair: true
+   };
+   var yAxis = {
+      min: 0,
+      title: {
+         text: '次'         
+      }      
+   };
+   var tooltip = {
+      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+      pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+         '<td style="padding:0"><b>{point.y:.2f} </b></td></tr>',
+      footerFormat: '</table>',
+      shared: true,
+      useHTML: true
+   };
+   var plotOptions = {
+      column: {
+         pointPadding: 0.2,
+         borderWidth: 0,
+		  dataLabels: {
+            enabled: true
+         }
+      }
+	  
+   };  
+   var credits = {
+      enabled: false
+   };
+   
+   var series= [{
+        name: 'ATE',
+              data: [Number(recvice.ATE_C['A']),Number(recvice.ATE_C['B']),Number(recvice.ATE_C['C']),Number(recvice.ATE_C['D']),Number(recvice.ATE_C['E']),Number(recvice.ATE_C['G']),Number(recvice.ATE_C['H']),Number(recvice.ATE_C['I'])]
+        },{
+	  name: 'AOI',
+              data: [Number(recvice.AOI_C['A']),Number(recvice.AOI_C['B']),Number(recvice.AOI_C['C']),Number(recvice.AOI_C['D']),Number(recvice.AOI_C['E']),Number(recvice.AOI_C['G']),Number(recvice.AOI_C['H']),Number(recvice.AOI_C['I'])]
+        },{
+	  name: 'FT',
+              data: [Number(recvice.FT_C['A']),Number(recvice.FT_C['B']),Number(recvice.FT_C['C']),Number(recvice.FT_C['D']),Number(recvice.FT_C['E']),Number(recvice.FT_C['G']),Number(recvice.FT_C['H']),Number(recvice.FT_C['I'])]
+        }
+	
+		
+		];     
+      
+   var json = {};   
+   json.chart = chart; 
+   json.title = title;   
+   json.subtitle = subtitle; 
+   json.tooltip = tooltip;
+   json.xAxis = xAxis;
+   json.yAxis = yAxis;  
+   json.series = series;
+   json.plotOptions = plotOptions;  
+   json.credits = credits;
+   $('#chart2').highcharts(json); 
+}
+function chart4(recvice) {  
+   var chart = {
+      type: 'column'
+   };
+   var title = {
+      text: '各线停线时间'   
+   };
+   var subtitle = {
+      text: 'Date:'+recvice.Dates[6]+"--"+recvice.Dates[0]
+   };
+   var xAxis = {
+      categories: ['A','B','C','D','E','G','H','I'],
+      crosshair: true
+   };
+   var yAxis = {
+      min: 0,
+      title: {
+         text: 'mins'         
+      }      
+   };
+   var tooltip = {
+      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+      pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+         '<td style="padding:0"><b>{point.y:.f} mins</b></td></tr>',
+      footerFormat: '</table>',
+      shared: true,
+      useHTML: true
+   };
+   var plotOptions = {
+      column: {
+         pointPadding: 0.2,
+         borderWidth: 0,
+		  dataLabels: {
+            enabled: true
+         }
+      }
+	  
+   };  
+   var credits = {
+      enabled: false
+   };
+   
+   var series= [{
+      name: 'ATE',
+              data: [Number(recvice.ATE['A']),Number(recvice.ATE['B']),Number(recvice.ATE['C']),Number(recvice.ATE['D']),Number(recvice.ATE['E']),Number(recvice.ATE['G']),Number(recvice.ATE['H']),Number(recvice.ATE['I'])]
+        },{
+	  name: 'AOI',
+              data: [Number(recvice.AOI['A']),Number(recvice.AOI['B']),Number(recvice.AOI['C']),Number(recvice.AOI['D']),Number(recvice.AOI['E']),Number(recvice.AOI['G']),Number(recvice.AOI['H']),Number(recvice.AOI['I'])]
+        },{
+	  name: 'FT',
+              data: [Number(recvice.FT['A']),Number(recvice.FT['B']),Number(recvice.FT['C']),Number(recvice.FT['D']),Number(recvice.FT['E']),Number(recvice.FT['G']),Number(recvice.FT['H']),Number(recvice.FT['I'])]
+        }
+		];     
+      
+   var json = {};   
+   json.chart = chart; 
+   json.title = title;   
+   json.subtitle = subtitle; 
+   json.tooltip = tooltip;
+   json.xAxis = xAxis;
+   json.yAxis = yAxis;  
+   json.series = series;
+   json.plotOptions = plotOptions;  
+   json.credits = credits;
+   $('#chart3').highcharts(json); 
+}
+</script>
+</body>
+</html>

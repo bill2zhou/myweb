@@ -1,0 +1,106 @@
+{
+  "name": "te-myweb",
+  "productName": "TE-Server",
+  "version": "1.0.0",
+  "description": "TE 生产管理系统（Electron 桌面版 / 内置 Node.js HTTP 服务 / SQLite3）",
+  "author": "TE",
+  "license": "MIT",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "serve": "node server/standalone.js",
+    "gen:db": "node scripts/gen-db.js",
+    "firewall": "powershell -ExecutionPolicy Bypass -File scripts/open-firewall.ps1",
+    "postinstall": "electron-builder install-app-deps",
+    "dist": "electron-builder --win",
+    "dist:portable": "electron-builder --win portable"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.renbao.te.myweb",
+    "productName": "TE-Server",
+    "copyright": "Copyright © TE",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "server/**/*",
+      "scripts/**/*",
+      "package.json",
+      "!**/*.php"
+    ],
+    "extraResources": [
+      {
+        "from": ".",
+        "to": "web",
+        "filter": [
+          "**/*",
+          "!node_modules/**",
+          "!server/**",
+          "!electron/**",
+          "!scripts/**",
+          "!dist/**",
+          "!build/**",
+          "!.git/**",
+          "!**/.vs/**",
+          "!.vscode/**",
+          "!.codebuddy/**",
+          "!package.json",
+          "!package-lock.json",
+          "!**/*.md",
+          "!**/*.log",
+          "!**/*.slnx",
+          "!.gitignore",
+          "!.gitattributes",
+          "!**/Thumbs.db",
+          "!**/*.php",
+          "!**/*.php.bak",
+          "!maintain_bak/**",
+          "!form/Classes/**",
+          "!maintain/Lib/**",
+          "!data/*.db",
+          "!data/*.db-shm",
+          "!data/*.db-wal",
+          "!data/.seeded"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TE-Server",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
