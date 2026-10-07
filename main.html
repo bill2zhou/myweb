@@ -1,558 +1,837 @@
- <!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>仁宝电脑--TE</title>
 <link rel="stylesheet" href="layui/css/layui.css">
-<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-<script src="../js/jquery-1.7.2.js"></script>
-<script src="../js/highcharts.js"></script> 
+<link rel="icon" type="image/x-icon" href="images/favicon.ico">
+<script src="js/jquery-1.7.2.js"></script>
+<script src="js/highcharts.js"></script>
+<style>
+  /* ================= 主页面壳（顶部栏 / 侧边栏 / 公告区） ================= */
+  :root { --te-accent: #1f74c4; --te-accent-2: #2f8fd8; }
 
+  html, body { height: 100%; }
+  body { background: #f2f5f9; }
+  .layui-layout-admin .layui-body { bottom: 0; overflow: hidden; }
+
+  /* ---------- 顶部栏 ---------- */
+  .te-header {
+    background: linear-gradient(90deg, #10395f 0%, #17558a 55%, #1f74c4 100%);
+    box-shadow: 0 1px 6px rgba(8, 32, 56, .35);
+    border-bottom: 0;
+  }
+  .te-header .layui-logo {
+    width: 240px; display: flex; align-items: center; padding-left: 14px;
+    background: none; color: #fff; font-size: 18px; letter-spacing: 1px;
+    box-shadow: none; overflow: hidden;
+  }
+  .te-header .layui-logo img { width: 26px; height: 26px; margin-right: 9px; flex: 0 0 auto; }
+  .te-header .layui-logo b { font-weight: 600; }
+  .te-header .layui-logo span {
+    margin-left: 9px; font-size: 12px; font-weight: 400; color: rgba(255, 255, 255, .62);
+    white-space: nowrap;
+  }
+  .te-header .layui-nav { background: none; }
+  .te-header .layui-nav-item > a { color: rgba(255, 255, 255, .88); font-size: 14px; }
+  .te-header .layui-nav-item > a:hover { color: #fff; }
+  .te-header .layui-nav-item > a cite { font-style: normal; }
+  .te-header .layui-nav .layui-nav-bar { background-color: #7ec7fd; }
+  .te-header .layui-nav-child { border-radius: 4px; box-shadow: 0 4px 14px rgba(8, 32, 56, .18); }
+  .te-header .layui-nav-child dd a { font-size: 13px; }
+  .te-header .layui-this,
+  .te-header .layui-nav-item > a .layui-icon { color: inherit; }
+  .te-header .layui-nav-mored,
+  .te-header .layui-nav-itemed > a .layui-nav-more { border-color: #fff transparent transparent; }
+
+  /* 侧边栏折叠开关（顶部栏右侧的按钮） */
+  .te-user > a { display: flex; align-items: center; height: 60px; }
+  .te-user .te-avatar {
+    width: 26px; height: 26px; margin-right: 8px; border-radius: 50%;
+    display: inline-block; text-align: center; line-height: 26px;
+    background: rgba(255, 255, 255, .2); color: #fff; font-size: 12px;
+  }
+  .te-user .te-uname { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .te-user .te-caret { margin-left: 5px; font-size: 12px; opacity: .75; }
+  .te-collapse-btn { background: none !important; border-color: rgba(255, 255, 255, .45) !important; color: rgba(255, 255, 255, .9) !important; }
+  .te-collapse-btn:hover { background: rgba(255, 255, 255, .14) !important; color: #fff !important; }
+
+  /* ---------- 侧边栏 ---------- */
+  .layui-side { top: 60px; background: #1c2b3a; }
+  .layui-side .layui-nav-tree { background: none; }
+  .layui-side .layui-nav-tree .layui-nav-item a { color: rgba(255, 255, 255, .74); }
+  .layui-side .layui-nav-tree .layui-nav-item a:hover { color: #fff; background: rgba(255, 255, 255, .06); }
+  .layui-side .layui-nav-tree .layui-nav-child a {
+    padding-left: 44px; font-size: 13px; position: relative;
+  }
+  .layui-side .layui-nav-tree .layui-nav-child a:before {
+    content: ''; position: absolute; left: 28px; top: 50%; width: 5px; height: 5px;
+    margin-top: -2px; border-radius: 50%; background: rgba(255, 255, 255, .3);
+  }
+  .layui-side .layui-nav-tree .layui-nav-child a:hover:before,
+  .layui-side .layui-nav-tree .layui-nav-child a.te-active:before { background: #7ec7fd; }
+  .layui-side .layui-nav-tree a.te-active { color: #fff !important; background: rgba(31, 116, 196, .55); }
+  .layui-side .layui-nav-tree .layui-nav-more { border-color: rgba(255, 255, 255, .5) transparent transparent; }
+
+  /* 侧边栏折叠 */
+  .te-collapsed .layui-side { width: 58px; }
+  .te-collapsed .layui-side-scroll { width: 78px; }
+  .te-collapsed .layui-nav-tree .layui-nav-item > a,
+  .te-collapsed .te-side-link {
+    padding: 0 !important; text-align: center; font-size: 0;
+  }
+  .te-collapsed .layui-nav-tree .layui-nav-item > a > .layui-icon,
+  .te-collapsed .te-side-link .layui-icon { font-size: 18px; margin: 0; }
+  .te-collapsed .te-side-link:before,
+  .te-collapsed .layui-nav-tree .layui-nav-more,
+  .te-collapsed .layui-nav-tree .layui-nav-child { display: none !important; }
+  .te-collapsed .layui-layout-admin .layui-body { left: 58px; }
+  .te-collapsed .layui-logo { width: 58px; padding-left: 16px; }
+  .te-collapsed .layui-logo span,
+  .te-collapsed .layui-logo b { display: none; }
+
+  /* ---------- 公告区 / 内容面板 ---------- */
+  .te-main { position: relative; height: 100%; padding: 14px 16px; overflow: hidden; box-sizing: border-box; }
+
+  .te-panel { height: 100%; overflow: auto; }
+  /* 通用隐藏类：面板 / 图表 / 公告列表 / 加载遮罩都靠它 */
+  .te-hidden { display: none !important; }
+  .te-content { max-width: 1080px; }
+
+  /* 面板顶部快捷入口 */
+  .te-quick { display: flex; flex-wrap: wrap; margin: 0 -6px 6px; }
+  .te-quick .te-quick-item {
+    flex: 1 1 168px; min-width: 148px; margin: 6px; padding: 12px 14px;
+    background: #fff; border-radius: 8px; cursor: pointer; text-decoration: none;
+    box-shadow: 0 1px 3px rgba(16, 57, 95, .10);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .te-quick .te-quick-item:hover {
+    transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16, 57, 95, .16); text-decoration: none;
+  }
+  .te-quick .te-quick-item i { font-size: 18px; color: var(--te-accent); margin-right: 8px; vertical-align: -2px; }
+  .te-quick .te-quick-item b { color: #1f3a55; font-weight: 600; font-size: 14px; }
+  .te-quick .te-quick-item em {
+    display: block; margin: 5px 0 0 26px; font-style: normal; font-size: 12px; color: #8fa3b8;
+  }
+  /* 有数据才显示的图表面板（靠通用 .te-hidden） */
+
+  /* 公告列表 */
+  .te-notice { margin: 0 0 14px; padding: 0; list-style: none; }
+  .te-notice li {
+    position: relative; padding: 9px 12px 9px 30px; margin-bottom: 8px; background: #fff;
+    border-radius: 6px; box-shadow: 0 1px 2px rgba(16, 57, 95, .08); font-size: 13px; color: #3d556c;
+  }
+  .te-notice li:before {
+    content: ''; position: absolute; left: 13px; top: 16px; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--te-accent-2);
+  }
+  .te-notice a { color: var(--te-accent); }
+  .te-notice a:hover { text-decoration: underline; }
+
+  /* 图表栅格 */
+  .te-charts { display: flex; flex-wrap: wrap; margin: 0 -8px; }
+  .te-charts > div {
+    flex: 1 1 520px; min-width: 300px; margin: 8px; background: #fff; border-radius: 8px;
+    padding: 6px 10px 10px; box-shadow: 0 1px 3px rgba(16, 57, 95, .10); overflow: hidden;
+  }
+  .te-charts > div:empty { display: none; }
+  .te-charts .layui-card { box-shadow: none; margin: 0; }
+  .te-charts .layui-card-header { border-bottom: 1px solid #eef2f6; font-weight: 600; color: #1f3a55; }
+
+  /* ---------- 内嵌窗口 ---------- */
+  .te-viewer {
+    height: 100%; display: flex; flex-direction: column; background: #fff; border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(16, 57, 95, .12); overflow: hidden;
+  }
+  .te-viewer-bar {
+    flex: 0 0 44px; display: flex; align-items: center; padding: 0 8px 0 14px;
+    background: #eef4fa; border-bottom: 1px solid #dce6f1;
+  }
+  .te-viewer-bar .te-viewer-title {
+    flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 600; color: #1f3a55;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .te-viewer-bar .te-viewer-title small {
+    margin-left: 8px; font-weight: 400; font-size: 12px; color: #8fa3b8;
+  }
+  .te-viewer-bar .te-viewer-tools { flex: 0 0 auto; display: flex; align-items: center; }
+  .te-viewer-bar .te-tool {
+    width: 30px; height: 30px; margin-left: 3px; line-height: 30px; text-align: center;
+    border-radius: 6px; color: #4a6785; cursor: pointer; font-size: 15px; text-decoration: none;
+  }
+  .te-viewer-bar .te-tool:hover { background: #dbe8f5; color: var(--te-accent); }
+  .te-viewer-body { position: relative; flex: 1 1 auto; min-height: 0; background: #fff; }
+  .te-viewer-body iframe { display: block; width: 100%; height: 100%; border: 0; }
+  .te-viewer-state {
+    position: absolute; left: 0; right: 0; top: 0; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255, 255, 255, .94); color: #6b8299; font-size: 13px; text-align: center;
+  }
+  .te-viewer-state .layui-icon { margin-right: 6px; font-size: 16px; vertical-align: -2px; }
+  .te-viewer-state.te-error { color: #c8544a; }
+
+  /* ---------- 响应式 ---------- */
+  @media screen and (max-width: 1100px) {
+    .te-header .layui-logo span { display: none; }
+  }
+  @media screen and (max-width: 900px) {
+    .te-header .layui-logo { width: 150px; }
+    .te-header .layui-logo b { font-size: 15px; }
+    .te-nav-text { display: none; }          /* 顶部导航只留图标，避免换行 */
+    .te-header .layui-nav-item > a { padding: 0 12px; }
+  }
+  @media screen and (max-width: 768px) {
+    .te-main { padding: 10px; }
+    .te-charts > div { flex-basis: 100%; }
+    .te-viewer-bar .te-viewer-title small { display: none; }
+  }
+</style>
 </head>
 <body class="layui-layout-body">
 
-<script> 
+<script>
+/* =========================================================================
+   主页面壳逻辑：公告区 <-> 内嵌窗口
+   - 侧边栏/顶部栏里的链接不再新开标签页，而是在「公告区」的内嵌窗口里打开
+   - 看板（良率 / 停机率 / 點檢表）与内嵌窗口互不干扰，来回切换内容不丢
+   - URL 支持 #v=<地址> 与 ?v=<地址>，刷新后能回到同一个内嵌窗口
+   ========================================================================= */
+(function () {
+  'use strict';
 
-            function initDowntimeCharts() {
-                console.log("初始化停机率图表...");
+  var VIEW_HASH = '#v=';
+  var SIDE_KEY = 'te-main-side';
+  var USER_KEY = 'te-login-user';
+  var DEFAULT_TITLE = '内部窗口';
 
-                // --- 模拟数据生成 ---
-                $.getJSON('../php/get_downtime_data.php', function(response) {
-                if (response.status !== 'success') {
-                    console.error('数据获取失败');
-                    return;
-                }
+  /** 动态文字交给多语言运行时翻译（没有该运行时则原样返回） */
+  function t(s) {
+    return (window.TE_I18N && typeof window.TE_I18N.t === 'function') ? window.TE_I18N.t(s) : s;
+  }
 
-                const data = response.data;
+  function $(sel) { return window.jQuery(sel); }
+  function store(key, value) {
+    try {
+      if (value === undefined) return window.localStorage.getItem(key);
+      if (value === null) window.localStorage.removeItem(key);
+      else window.localStorage.setItem(key, value);
+    } catch (e) { /* 隐私模式等场景忽略 */ }
+    return null;
+  }
 
-                // 更新 KPI
-                $('#dw-kpi-week').text(data.week.avg + '%');
-                $('#dw-kpi-month').text(data.month.avg + '%');
-                $('#dw-kpi-year').text(data.year.avg + '%');
+  /* ---------------- 公告区 / 内嵌窗口 切换 ---------------- */
 
-                // 通用图表配置
-                const commonConfig = {
-                    chart: { backgroundColor: 'transparent' },
-                    title: { text: null },
-                    xAxis: { crosshair: true },
-                    yAxis: { title: { text: null }, labels: { format: '{value}%' } },
-                    tooltip: { pointFormat: '{point.y:.2f} %' },
-                    credits: { enabled: false },
-                    plotOptions: { series: { marker: { enabled: false } } }
-                };
+  function showDashboard() {
+    var home = document.getElementById('te-home');
+    var viewer = document.getElementById('te-viewer');
+    if (home) home.className = 'te-panel';
+    if (viewer) viewer.className = 'te-panel te-hidden';
+    if (window.location.hash.indexOf(VIEW_HASH) === 0) {
+      try { window.history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) { window.location.hash = ''; }
+    }
+  }
 
-                // 渲染周图表
-                Highcharts.chart('dw-chart-week', Highcharts.merge(commonConfig, {
-                    chart: { type: 'areaspline' },
-                    colors: ['#3498db'],
-                    xAxis: { categories: data.week.labels },
-                    series: [{ name: '停机率', data: data.week.values, fillOpacity: 0.3 }]
-                }));
+  function closeViewer() { showDashboard(); }
 
-                // 渲染月图表
-                Highcharts.chart('dw-chart-month', Highcharts.merge(commonConfig, {
-                    chart: { type: 'line' },
-                    colors: ['#2ecc71'],
-                    xAxis: { categories: data.month.labels },
-                    series: [{ name: '停机率', data: data.month.values }]
-                }));
+  function setState(html, isError) {
+    var el = document.getElementById('te-viewer-state');
+    if (!el) return;
+    el.innerHTML = html;
+    el.className = 'te-viewer-state' + (isError ? ' te-error' : '');
+  }
 
-                // 渲染年图表
-                Highcharts.chart('dw-chart-year', Highcharts.merge(commonConfig, {
-                    chart: { type: 'column' },
-                    colors: ['#9b59b6'],
-                    xAxis: { categories: data.year.labels },
-                    series: [{ name: '平均停机率', data: data.year.values }]
-                }));
-                
-                });
-            }
+  /**
+   * 在公告区的内嵌窗口里打开一个地址
+   * @param {string} url    要打开的地址（可带 ?query）
+   * @param {string} [title] 窗口标题
+   * @param {string} [hint] 标题后面的说明文字
+   * @param {boolean} [keepHash] 内部使用：为 true 时不重复写地址栏
+   */
+  function openInPanel(url, title, hint, keepHash) {
+    if (!url) return;
+    if (url.charAt(0) === '#' || /^javascript:/i.test(url)) return;
 
-function dataserach()
-{
-let newurl="";
-let hostname="";
- hostname = window.location.hostname;
- console.log(hostname);
- newurl="http://"+hostname+":2016";
-  console.log(newurl);
- window.open(newurl,"_blank");
-}
-function fpy(){
- $.post("php/DailyFpy.php",{},
-     function(data){
-     console.log(data) ;  
-	 var obj = (typeof data === 'string' ? JSON.parse(data) : data); 
-	 chart(obj);
-	 chart2(obj);
-	 $('#chart3').html("");
-	 $('#part').html("");
-	 $('#ict').html("");
+    var home = document.getElementById('te-home');
+    var viewer = document.getElementById('te-viewer');
+    var frame = document.getElementById('te-viewer-frame');
+    if (!viewer || !frame) { window.open(url, '_blank'); return; }
+
+    title = title || url;
+    if (home) home.className = 'te-panel te-hidden';
+    viewer.className = 'te-panel';
+
+    document.getElementById('te-viewer-title').innerHTML = t(title) +
+      (hint ? '<small>' + t(hint) + '</small>' : '');
+    document.getElementById('te-viewer-open').setAttribute('href', url);
+    setState('<span class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></span>' + t('加载中'));
+
+    // 侧边栏高亮
+    var links = document.querySelectorAll('.te-side-link');
+    for (var i = 0; i < links.length; i++) {
+      var href = links[i].getAttribute('data-te-url') || '';
+      if (href === url) links[i].className = links[i].className.replace(/\s*te-active/g, '') + ' te-active';
+      else links[i].className = links[i].className.replace(/\s*te-active/g, '');
+    }
+
+    frame.src = url;
+    if (!keepHash) {
+      try { window.history.replaceState(null, '', window.location.pathname + window.location.search + VIEW_HASH + encodeURIComponent(url)); } catch (e) { /* 忽略 */ }
+    }
+    return false;
+  }
+
+  function frameLoaded() {
+    setState('');
+  }
+
+  function frameFailed() {
+    setState('<span class="layui-icon layui-icon-face-cry"></span>' + t('加载失败'),
+      true);
+  }
+
+  /* ---------------- 侧边栏折叠 ---------------- */
+
+  function applySide(collapsed) {
+    var body = document.body;
+    if (collapsed) body.className = body.className.replace(/\s*te-collapsed/, '') + ' te-collapsed';
+    else body.className = body.className.replace(/\s*te-collapsed/, '');
+    try { window.layui && layui.element && layui.element.init && layui.element.init(); } catch (e) { /* 忽略 */ }
+  }
+
+  function toggleSide() { applySide(!document.body.className.match(/te-collapsed/)); }
+
+  /* ---------------- 初始化 ---------------- */
+
+  function ready() {
+    // 侧边栏折叠状态
+    if (store(SIDE_KEY) === '1') applySide(true);
+
+    // 顶部用户名
+    var name = store(USER_KEY) || 'ATE';
+    var uname = document.getElementById('te-uname');
+    if (uname) uname.textContent = name;
+    var avatar = document.getElementById('te-avatar');
+    if (avatar) avatar.textContent = name.charAt(0).toUpperCase();
+
+    // 用户名点击交给 layui dropdown 展开，不再触发默认跳转
+    var userLink = document.getElementById('te-user-link');
+    if (userLink) {
+      userLink.onclick = function () { return false; };
+    }
+
+    // Esc：关内嵌窗口（先）→ 再收起侧边栏（后）
+    document.addEventListener('keydown', function (e) {
+      var code = e.keyCode || e.which;
+      if (code !== 27) return;
+      var viewer = document.getElementById('te-viewer');
+      if (viewer && viewer.className.indexOf('te-hidden') === -1) { closeViewer(); return; }
+      if (document.body.className.match(/te-collapsed/)) applySide(false);
     });
 
-}
-function stop(){
- $.post("php/maintain.php",{},
-     function(data){
-	 var obj = (typeof data === 'string' ? JSON.parse(data) : data); 
-	 chart3(obj);
-	 chart4(obj);
-	 chart5(obj);
-	  $('#part').load("rate.html", function(response, status, xhr) {
-                if (status == "error") {
-                    $(this).html("加载失败: " + xhr.status + " " + xhr.statusText);
-                } else {
-                    initDowntimeCharts();
-                }
-	  });
-	  $('#ict').html("");
+    // 地址栏 / 刷新恢复内嵌窗口
+    var target = '';
+    var m = /#v=([^&]+)/.exec(window.location.hash);
+    if (m) target = decodeURIComponent(m[1]);
+    if (!target) {
+      var q = /[?&]v=([^&]+)/.exec(window.location.search);
+      if (q) target = decodeURIComponent(q[1]);
+    }
+    if (target) openInPanel(target, t(DEFAULT_TITLE));
+
+    window.addEventListener('hashchange', function () {
+      var mm = /#v=([^&]+)/.exec(window.location.hash);
+      if (mm) openInPanel(decodeURIComponent(mm[1]), t(DEFAULT_TITLE), '', true);
+      else closeViewer();
     });
-}
 
-function checklist(){
+    var collapse = document.getElementById('te-collapse');
+    if (collapse) {
+      collapse.onclick = function () {
+        var collapseNow = !document.body.className.match(/te-collapsed/);
+        store(SIDE_KEY, collapseNow ? '1' : '0');   // 记录的是「切换后」的状态
+        toggleSide();
+        return false;
+      };
+    }
+  }
 
-  $('#chart1').html("");
-  $('#chart2').html("");
- $('#part').html("ATE日常點檢表")
- $('#ict').html(' <a target="_blank" href="../form/program.html" style="color:blue" >SPI/AOI/ATE/ICT測試程式修改記錄表</a>  <br><hr>\
- <a target="_blank" href="../form/jig.html" style="color:blue" >INLINE ATE治具點檢表</a>  <br><hr>\
- <a target="_blank" href="../form/daily.html" style="color:blue" >INLINE ATE每日开线點檢表</a>  <br><hr>\
- ');
-}
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready);
+  } else {
+    ready();
+  }
 
+  // 暴露给页面里的链接与脚本使用
+  window.teOpenInPanel = openInPanel;
+  window.teCloseViewer = closeViewer;
+  window.teShowDashboard = showDashboard;
+
+  /** 显示某个图表面板（清空时用 teHideChart，避免残留上一批数据） */
+  function showChart(id) {
+    var el = document.getElementById(id);
+    if (el) { el.className = ''; }
+    return $(el);
+  }
+  function hideChart(id) {
+    var el = document.getElementById(id);
+    if (el) { el.className = 'te-hidden'; el.innerHTML = ''; }
+  }
+  window.teShowChart = showChart;
+  window.teHideChart = hideChart;
+
+  /* ---------------- 停机率看板（保留原有函数名与行为） ---------------- */
+
+  window.initDowntimeCharts = function initDowntimeCharts() {
+    jQuery.getJSON('php/get_downtime_data.php', function (response) {
+      if (!response || response.status !== 'success') return;
+      var data = response.data;
+      $('#dw-kpi-week').text(data.week.avg + '%');
+      $('#dw-kpi-month').text(data.month.avg + '%');
+      $('#dw-kpi-year').text(data.year.avg + '%');
+
+      // 公告区可能被隐藏，Highcharts 需要容器可见才有尺寸
+      window.setTimeout(function () {
+        var common = {
+          chart: { backgroundColor: 'transparent' },
+          title: { text: null },
+          xAxis: { crosshair: true },
+          yAxis: { title: { text: null }, labels: { format: '{value}%' } },
+          tooltip: { pointFormat: '{point.y:.2f} %' },
+          credits: { enabled: false },
+          plotOptions: { series: { marker: { enabled: false } } },
+        };
+        Highcharts.chart('dw-chart-week', Highcharts.merge(common, {
+          chart: { type: 'areaspline' },
+          colors: ['#3498db'],
+          xAxis: { categories: data.week.labels },
+          series: [{ name: '停机率', data: data.week.values, fillOpacity: 0.3 }],
+        }));
+        Highcharts.chart('dw-chart-month', Highcharts.merge(common, {
+          chart: { type: 'line' },
+          colors: ['#2ecc71'],
+          xAxis: { categories: data.month.labels },
+          series: [{ name: '停机率', data: data.month.values }],
+        }));
+        Highcharts.chart('dw-chart-year', Highcharts.merge(common, {
+          chart: { type: 'column' },
+          colors: ['#9b59b6'],
+          xAxis: { categories: data.year.labels },
+          series: [{ name: '平均停机率', data: data.year.values }],
+        }));
+      }, 30);
+    });
+  };
+
+  /* ---------------- 原有看板函数（保持全局，供链接直接调用） ---------------- */
+
+  window.fpy = function fpy() {
+    window.teShowDashboard();
+    jQuery.post('php/DailyFpy.php', {}, function (data) {
+      var obj = (typeof data === 'string' ? JSON.parse(data) : data);
+      chart(obj);
+      chart2(obj);
+      $('#part').html('');
+      $('#ict').html('').addClass('te-hidden');
+      window.teHideChart('chart3');
+      window.teHideChart('chart5');
+      window.teHideChart('chart6');
+    });
+  };
+
+  window.stop = function stop() {
+    window.teShowDashboard();
+    jQuery.post('php/maintain.php', {}, function (data) {
+      var obj = (typeof data === 'string' ? JSON.parse(data) : data);
+      chart3(obj);
+      chart4(obj);
+      chart5(obj);
+      $('#ict').html('').addClass('te-hidden');
+      window.teHideChart('chart1');
+      window.teHideChart('chart2');
+      $('#part').load('rate.html', function (response, status, xhr) {
+        if (status === 'error') $(this).html('加载失败: ' + xhr.status + ' ' + xhr.statusText);
+        else window.initDowntimeCharts();
+      });
+    });
+  };
+
+  window.dataserach = function dataserach() {
+    var url = 'http://' + window.location.hostname + ':2016';
+    return window.teOpenInPanel(url, '測試資料查詢', url);
+  };
+
+  // 侧边栏「點檢表」：在公告区里列出各张点检表，点击在内嵌窗口打开
+  window.checklist = function checklist() {
+    window.teShowDashboard();
+    window.teHideChart('chart1');
+    window.teHideChart('chart2');
+    window.teHideChart('chart3');
+    window.teHideChart('chart5');
+    window.teHideChart('chart6');
+    $('#part').html('ATE日常點檢表');
+    var rows = [
+      ['../form/program.html', 'SPI/AOI/ATE/ICT測試程式修改記錄表'],
+      ['../form/jig.html', 'INLINE ATE治具點檢表'],
+      ['../form/daily.html', 'INLINE ATE每日开线點檢表'],
+    ];
+    var html = '<ul class="te-notice">';
+    for (var i = 0; i < rows.length; i++) {
+      html += '<li><a href="javascript:;" onclick="return teOpenInPanel(\'' + rows[i][0] + '\',\'' +
+        rows[i][1] + '\')">' + rows[i][1] + '</a></li>';
+    }
+    $('#ict').html(html + '</ul>').removeClass('te-hidden');
+  };
+})();
 </script>
+
 <div class="layui-layout layui-layout-admin">
-  <div class="layui-header">
-    <div class="layui-logo"><a href="/">TE-SERVER1</a></div>
-    <!-- 头部区域（可配合layui已有的水平导航） -->
+  <!-- ==================== 顶部栏 ==================== -->
+  <div class="layui-header te-header">
+    <div class="layui-logo">
+      <img src="images/logo.png" alt="TE">
+      <b>TE-SERVER</b>
+
+    </div>
     <ul class="layui-nav layui-layout-left">
-      <li class="layui-nav-item"><a target="_blank" href="maintain/index.html">设备维护</a></li>
-      <li class="layui-nav-item"><a target="_blank" href="manage/index.html">备品管理</a></li>
-      <li class="layui-nav-item"><a target="_blank" href="ntf.html">良率改善</a></li>
-      <li class="layui-nav-item"><a target="_blank" href="dbadmin/">数据库管理</a></li>
+      <li class="layui-nav-item"><a href="javascript:;" onclick="return teOpenInPanel('maintain/index.html','设备维护')"><i class="layui-icon layui-icon-set"></i><cite class="te-nav-text"> 设备维护</cite></a></li>
+      <li class="layui-nav-item"><a href="javascript:;" onclick="return teOpenInPanel('manage/index.html','备品管理')"><i class="layui-icon layui-icon-component"></i><cite class="te-nav-text"> 备品管理</cite></a></li>
+      <li class="layui-nav-item"><a href="javascript:;" onclick="return teOpenInPanel('ntf.html','良率改善')"><i class="layui-icon layui-icon-chart"></i><cite class="te-nav-text"> 良率改善</cite></a></li>
+      <!-- 測驗挪到外面（原在「其它」下拉里），仍在内嵌窗口打开 -->
+      <li class="layui-nav-item"><a href="javascript:;" onclick="return teOpenInPanel('../test/index.html','測驗')"><i class="layui-icon layui-icon-edit"></i><cite class="te-nav-text"> 測驗</cite></a></li>
       <li class="layui-nav-item">
-        <a href="javascript:;">其它系统</a>
+        <a href="javascript:;"><i class="layui-icon layui-icon-more-vertical"></i><cite class="te-nav-text"> 其它</cite></a>
         <dl class="layui-nav-child">
-          <dd><a target="_blank" href="../html/expert/index.html">TE高级教程</a></dd>
-          <dd><a target="_blank" href="../html/index.html">TE教育训练</a></dd>
-          <dd><a target="_blank" href="../test/index.html">測驗</a></dd>
+          <!-- 这三项独立窗口打开，不放进内嵌窗口 -->
+          <dd><a href="dbadmin/" target="_blank" rel="noopener"><i class="layui-icon layui-icon-console"></i> 数据库管理</a></dd>
+          <dd><a href="../html/expert/index.html" target="_blank" rel="noopener"><i class="layui-icon layui-icon-read"></i> TE高级教程</a></dd>
+          <dd><a href="../html/index.html" target="_blank" rel="noopener"><i class="layui-icon layui-icon-template-1"></i> TE教育训练</a></dd>
         </dl>
       </li>
     </ul>
+
     <ul class="layui-nav layui-layout-right">
-      <li class="layui-nav-item">
-		<button id="login1" class="layui-btn demo" data-type="login">Login</button>
+      <li class="layui-nav-item te-user">
+        <a href="javascript:;" id="te-user-link">
+          <span class="te-avatar" id="te-avatar">A</span>
+          <cite class="te-uname" id="te-uname">ATE</cite>
+
+        </a>
         <dl class="layui-nav-child">
-          <dd><a href="">基本资料</a></dd>
-          <dd><a href="">安全设置</a></dd>
+          <dd><a href="javascript:;" class="te-rename"><i class="layui-icon layui-icon-username"></i> 基本资料</a></dd>
+          <dd><a href="javascript:;" class="te-rename"><i class="layui-icon layui-icon-password"></i> 安全设置</a></dd>
+          <hr>
+          <dd><a href="index.html" id="te-logout"><i class="layui-icon layui-icon-logout"></i> 退出</a></dd>
         </dl>
       </li>
-      <li class="layui-nav-item"><button class="layui-btn demo" data-type="logout" href="index.html">退出</button></li>
+      <li class="layui-nav-item">
+        <button class="layui-btn layui-btn-xs te-collapse-btn" id="te-collapse" data-type="collapse"
+                title="折叠 / 展开侧边栏">
+          <i class="layui-icon layui-icon-shrink-right"></i>
+        </button>
+      </li>
     </ul>
   </div>
-  
+
+  <!-- ==================== 侧边栏 ==================== -->
   <div class="layui-side layui-bg-black">
     <div class="layui-side-scroll">
-      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
-      <ul class="layui-nav layui-nav-tree"  lay-filter="test">
+      <ul class="layui-nav layui-nav-tree" lay-filter="te-side">
         <li class="layui-nav-item layui-nav-itemed">
-          <a  href="javascript:;">常用</a>
+          <a href="javascript:;" title="常用"><i class="layui-icon layui-icon-app"></i> 常用</a>
           <dl class="layui-nav-child">
-            <dd><a href="javascript:fpy();">良率</a></dd>
-            <dd><a href="javascript:stop();" data-type="test">停机率</a></dd>
-            <dd><a href="javascript:checklist();">點檢表</a></dd>	
-			<dd><a target="_blank" href="../handover/ate.html">交接</a></dd>
-			<dd><a target="_blank" href="../search/index.html">查找</a></dd>
-            <dd><a href="javascript:dataserach();">測試資料查詢</a></dd>	
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="fpy" onclick="return fpy()"><i class="layui-icon layui-icon-chart-screen"></i> 良率</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="stop" onclick="return stop()"><i class="layui-icon layui-icon-pause"></i> 停机率</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="checklist" onclick="return checklist()"><i class="layui-icon layui-icon-form"></i> 點檢表</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="../handover/ate.html" onclick="return teOpenInPanel('../handover/ate.html','交接')"><i class="layui-icon layui-icon-transfer"></i> 交接</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="../search/index.html" onclick="return teOpenInPanel('../search/index.html','查找')"><i class="layui-icon layui-icon-search"></i> 查找</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="dataserach" onclick="return dataserach()"><i class="layui-icon layui-icon-engine"></i> 測試資料查詢</a></dd>
           </dl>
         </li>
         <li class="layui-nav-item">
-          <a href="javascript:;">其它</a>
+          <a href="javascript:;" title="其它"><i class="layui-icon layui-icon-more"></i> 其它</a>
           <dl class="layui-nav-child">
-            <dd><a target="_blank"  href="../test/add.html">测试题库添加</a></dd>
-            <dd><a target="_blank" href="../test/chart_score.php">ATE测试分数</a></dd>
-            <dd><a href="">FT</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="../test/add.html" onclick="return teOpenInPanel('../test/add.html','测试题库添加')"><i class="layui-icon layui-icon-add-circle"></i> 测试题库添加</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="../test/chart_score.php" onclick="return teOpenInPanel('../test/chart_score.php','ATE测试分数')"><i class="layui-icon layui-icon-chart"></i> ATE测试分数</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="../ntf.html" onclick="return teOpenInPanel('../ntf.html','NTF & FPY')"><i class="layui-icon layui-icon-rate"></i> NTF &amp; FPY</a></dd>
           </dl>
         </li>
-		    <li class="layui-nav-item">
-          <a href="javascript:;">文件</a>
+        <li class="layui-nav-item">
+          <a href="javascript:;" title="文件"><i class="layui-icon layui-icon-file"></i> 文件</a>
           <dl class="layui-nav-child">
-            <dd><a href="../QPA/2020.xls">ATE備品管理-2020</a></dd>
-            <dd><a href="../QPA/List.xls">ATE设备功率参数 List  </a></dd>
-            <dd><a href="../QPA/ATE.xls">ATE設備統計表-ICT-ATE</a></dd>
+            <dd><a href="../QPA/2020.xls" class="te-side-link" data-te-url="../QPA/2020.xls"><i class="layui-icon layui-icon-file-excel"></i> ATE備品管理-2020</a></dd>
+            <dd><a href="../QPA/List.xls" class="te-side-link" data-te-url="../QPA/List.xls"><i class="layui-icon layui-icon-file-excel"></i> ATE设备功率参数 List</a></dd>
+            <dd><a href="../QPA/ATE.xls" class="te-side-link" data-te-url="../QPA/ATE.xls"><i class="layui-icon layui-icon-file-excel"></i> ATE設備統計表-ICT-ATE</a></dd>
           </dl>
         </li>
-		
-		
-		
-		
       </ul>
     </div>
   </div>
-  
+
+  <!-- ==================== 公告区 / 内嵌窗口 ==================== -->
   <div class="layui-body">
-    <!-- 内容主体区域 -->
-	<div id="summary" >
-	<h2 id="part" style="text-align:center">公告</h2>
-<br>
-	</div>
-	<div id="ict" style="width: 650px; height: 200px; margin: 0 auto;"></div> 
-    <div id="chart1" style="width: 650px; height: 400px; margin: 0 auto"></div>  
-	<div id="chart2" style="width: 650px; height: 400px; margin: 0 auto"></div>  
-	<div id="chart3" style="width: 650px; height: 400px; margin: 0 auto"></div> 
-  </div>
-  
-  <div class="layui-footer">
-    <!-- 底部固定区域 -->   
+    <div class="te-main">
+
+      <!-- 公告面板 -->
+      <div class="te-panel" id="te-home">
+        <div class="te-content">
+          <div class="te-quick">
+            <a class="te-quick-item" href="javascript:;" onclick="return fpy()"><i class="layui-icon layui-icon-chart-screen"></i><b>良率</b><em>各线每日平均良率</em></a>
+            <a class="te-quick-item" href="javascript:;" onclick="return stop()"><i class="layui-icon layui-icon-pause"></i><b>停机率</b><em>停线次数 / 时间与趋势</em></a>
+            <a class="te-quick-item" href="javascript:;" onclick="return checklist()"><i class="layui-icon layui-icon-form"></i><b>點檢表</b><em>ATE 日常点检记录表</em></a>
+            <a class="te-quick-item" href="javascript:;" onclick="return teOpenInPanel('maintain/index.html','设备维护')"><i class="layui-icon layui-icon-set"></i><b>设备维护</b><em>保养与维修记录</em></a>
+          </div>
+
+          <h2 id="part" style="text-align:center">公告</h2>
+          <br>
+          <div id="ict"></div>
+
+          <div class="te-charts">
+            <div id="chart1"></div>
+            <div id="chart2"></div>
+            <div id="chart3"></div>
+            <div id="chart5"></div>
+            <div id="chart6"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 内嵌窗口 -->
+      <div class="te-panel te-hidden" id="te-viewer">
+        <div class="te-viewer">
+          <div class="te-viewer-bar">
+            <span class="te-viewer-title" id="te-viewer-title">内部窗口</span>
+            <span class="te-viewer-tools">
+              <a class="te-tool" href="javascript:;" id="te-viewer-back-home" title="回到公告"
+                 onclick="return teCloseViewer()"><i class="layui-icon layui-icon-home"></i></a>
+              <a class="te-tool" href="javascript:;" id="te-viewer-reload" title="刷新"
+                 onclick="return teReloadPanel()"><i class="layui-icon layui-icon-refresh"></i></a>
+              <a class="te-tool" href="javascript:;" id="te-viewer-open" target="_blank" title="在新标签页打开">
+                <i class="layui-icon layui-icon-release"></i></a>
+              <a class="te-tool" href="javascript:;" id="te-viewer-close" title="关闭"
+                 onclick="return teCloseViewer()"><i class="layui-icon layui-icon-close"></i></a>
+            </span>
+          </div>
+          <div class="te-viewer-body">
+            <iframe id="te-viewer-frame" name="te-viewer-frame" title="内部窗口" src="about:blank"
+                    onload="teFrameLoaded()" onerror="teFrameFailed()"></iframe>
+            <div class="te-viewer-state te-hidden" id="te-viewer-state"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
+
 <script src="layui/layui.js"></script>
 <script src="/js/i18n.js"></script>
 <script>
-	/**
-async  function checklink(link){
-try {
-let response = await fetch (link.href,{method:'HEAD'});
-if(!response.ok){
- throw new Error('link not reachable');
-}
-return true;
-}
-catch(error)
-{
-console.log(error);
-return false;
-}
-}
-(async () => {
-const linkelement=document.getElementById('mianlink');
-const isReachable = await checklink(linkelement);
-if(!isReachable)
-{
-linkelement.href = "http://10.134.38.15";
-linkelement.textContent="ATE測試資料查詢(OA)";
-}
-})();
-**/
+/* =========================================================================
+   交互与图表：本段在所有元素与 layui 之后执行
+   ========================================================================= */
 
- $('#login1').html("ATE");
- 
-layui.use('element', function(){
-  var element = layui.element; 
+/** 内嵌窗口 iframe 回调（供 onload / onerror 使用） */
+function teFrameLoaded() {
+  var state = document.getElementById('te-viewer-state');
+  if (state) state.className = 'te-viewer-state te-hidden';
+}
+
+function teFrameFailed() {
+  var state = document.getElementById('te-viewer-state');
+  if (state) {
+    state.innerHTML = '<span class="layui-icon layui-icon-face-cry"></span>加载失败';
+    state.className = 'te-viewer-state te-error';
+  }
+}
+
+/** 刷新内嵌窗口（重新赋值 src，绕过缓存） */
+function teReloadPanel() {
+  var frame = document.getElementById('te-viewer-frame');
+  var opener = document.getElementById('te-viewer-open');
+  var url = opener ? opener.getAttribute('href') : '';
+  // 还没打开过任何地址时 href 是 javascript:;，不能拿去当 src
+  if (!frame || !url || url === '#' || /^(javascript:|about:)/i.test(url)) return false;
+  var state = document.getElementById('te-viewer-state');
+  if (state) {
+    state.innerHTML = '<span class="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop"></span>加载中';
+    state.className = 'te-viewer-state';
+  }
+  frame.src = url + (url.indexOf('?') === -1 ? '?' : '&') + '_t=' + new Date().getTime();
+  return false;
+}
+
+layui.use(['element', 'layer'], function () {
+  'use strict';
+  var element = layui.element;
+  var layer = layui.layer;
+  var $ = layui.jquery;
+
+  /* ---------- 顶部用户名：可修改，写入 localStorage 与登录页共用 ---------- */
+  function currentUser() {
+    try { return window.localStorage.getItem('te-login-user') || 'ATE'; } catch (e) { return 'ATE'; }
+  }
+  function applyUser(name) {
+    $('#te-uname').text(name);
+    $('#te-avatar').text(String(name).charAt(0).toUpperCase());
+  }
+  applyUser(currentUser());
+
+  $('#te-user-link').on('click', function () { return false; });   // 交给 layui dropdown 展开
+
+  $('.te-rename').on('click', function () {
+    layer.prompt({ title: '输入工号，并确认', value: currentUser(), formType: 1 }, function (pass, index) {
+      layer.close(index);
+      pass = String(pass).replace(/^\s+|\s+$/g, '');
+      if (!pass) return;
+      try { window.localStorage.setItem('te-login-user', pass); } catch (e) { /* 忽略 */ }
+      applyUser(pass);
+      layer.msg('已保存', { icon: 1, time: 1200 });
+    });
+  });
+
+  /* 侧边栏父级标题的展开/收起交给 layui 自带的导航事件（element.js 的 clickThis）。
+     这里不要重复绑定：两边各 toggle 一次 layui-nav-itemed 会互相抵消，点了没反应。 */
+
+  /* ---------- 窄屏时让内嵌页面自适应高度 ---------- */
+  function fitHeight() {
+    var main = document.querySelector('.te-main');
+    var viewer = document.getElementById('te-viewer');
+    if (!main || !viewer) return;
+    // clientHeight 含 padding，必须扣掉，否则面板会比可视区高出 padding 之和（底部被裁）
+    var cs = window.getComputedStyle(main);
+    var h = main.clientHeight - parseFloat(cs.paddingTop || 0) - parseFloat(cs.paddingBottom || 0);
+    viewer.style.height = h > 200 ? h + 'px' : '';
+  }
+  window.addEventListener('resize', fitHeight);
+  fitHeight();
 });
-layui.use('layer', function(){
-  var $ = layui.jquery, layer = layui.layer; //独立版的layer无需执行这一句
-  var active = {
-  login: function(){
-      layer.prompt({title: '输入工号，并确认', formType: 1}, function(pass, index){
-      layer.close(index);	  
-	  $('#login1').html(pass);
-      });
-    }
-  };
-   $('.demo').on('click', function(){
-    var type = $(this).data('type');
-    active[type] ? active[type].call(this) : '';
-  }); 
- });
 
-function chart(recvice) {   
-   var Mydate= new Date();
-   
-   var title = {
-      text: '每日平均良率'   
-   };
-   var subtitle = {
-      text: 'Date:'+recvice.Dates[0]
-   };
-   var xAxis = {
-      categories: [recvice.Dates[6],recvice.Dates[5],recvice.Dates[4],recvice.Dates[3],recvice.Dates[2],recvice.Dates[1],recvice.Dates[0]]
-   };
-   var yAxis = {
-      title: {
-         text: '(%)'
-      }
-   };
-   var plotOptions = {
-      line: {
-         dataLabels: {
-            enabled: true
-         },   
-         enableMouseTracking: true
-      }
-   };
-   var series= [{
-        name: 'ATE',
-         data: [Number(recvice.ATE[6]),Number(recvice.ATE[5]),Number(recvice.ATE[4]),Number(recvice.ATE[3]),Number(recvice.ATE[2]),Number(recvice.ATE[1]),Number(recvice.ATE[0])]
-        }/*,{
-	   name: 'AOI',
-         data: [Number(recvice.aoifpy[6]),Number(recvice.aoifpy[5]),Number(recvice.aoifpy[4]),Number(recvice.aoifpy[3]),Number(recvice.aoifpy[2]),Number(recvice.aoifpy[1]),Number(recvice.aoifpy[0])]
-        },{
-       name: 'FT',
-         data: [Number(recvice.FT[6]),Number(recvice.FT[5]),Number(recvice.FT[4]),Number(recvice.FT[3]),Number(recvice.FT[2]),Number(recvice.FT[1]),Number(recvice.FT[0])]
-		
-        }	 */
-		
-		
-   ];  
-   var json = {};
-   json.title = title;
-   json.subtitle = subtitle;
-   json.xAxis = xAxis;
-   json.yAxis = yAxis;  
-   json.series = series;
-   json.plotOptions = plotOptions;
-   $('#chart1').highcharts(json);
-  
-}
-function chart5(recvice) {   
-   var Mydate= new Date();
-   
-   var title = {
-      text: '各线停机率'   
-   };
-   var subtitle = {
-      text: 'Date:'+recvice.Dates[0]
-   };
-   var xAxis = {
-     categories: ['A','B','C','D','E','G','H','I']
-    };
-   var yAxis = {
-      title: {
-         text: '(%)'
-      }
-   };
-   var plotOptions = {
-      line: {
-         dataLabels: {
-            enabled: true
-         },   
-         enableMouseTracking: true
-      }
-   };
-   var series= [{
-        name: 'ATE',
-              data: [Number(recvice.ATE_V['A']),Number(recvice.ATE_V['B']),Number(recvice.ATE_V['C']),Number(recvice.ATE_V['D']),Number(recvice.ATE_V['E']),Number(recvice.ATE_V['G']),Number(recvice.ATE_V['H']),Number(recvice.ATE_V['I'])]
-        },{
-	  name: 'AOI',
-              data: [Number(recvice.AOI_V['A']),Number(recvice.AOI_V['B']),Number(recvice.AOI_V['C']),Number(recvice.AOI_V['D']),Number(recvice.AOI_V['E']),Number(recvice.AOI_V['G']),Number(recvice.AOI_V['H']),Number(recvice.AOI_V['I'])]
-        },{
-	  name: 'FT',
-              data: [Number(recvice.FT_V['A']),Number(recvice.FT_V['B']),Number(recvice.FT_V['C']),Number(recvice.FT_V['D']),Number(recvice.FT_V['E']),Number(recvice.FT_V['G']),Number(recvice.FT_V['H']),Number(recvice.FT_V['I'])]
-        }
-		
-   ];  
-   var json = {};
-   json.title = title;
-   json.subtitle = subtitle;
-   json.xAxis = xAxis;
-   json.yAxis = yAxis;  
-   json.series = series;
-   json.plotOptions = plotOptions;
-   $('#chart1').highcharts(json);
-  
-}
-function chart2(recvice) {  
-   var chart = {
-      type: 'column'
-   };
-   var title = {
-      text: '各线良率'   
-   };
-   var subtitle = {
-      text: 'Date:'+recvice.Dates[0]
-   };
-   var xAxis = {
-      categories: ['A','B','C','D','E','G','H','I'],
-      crosshair: true
-   };
-   var yAxis = {
-      min: 0,
-      title: {
-         text: '百分比'         
-      }      
-   };
+/* ==================== 图表（结构与原页面保持一致） ==================== */
+
+function chart(recvice) {
+   var title = { text: '每日平均良率' };
+   var subtitle = { text: 'Date:' + recvice.Dates[0] };
+   var xAxis = { categories: [recvice.Dates[6], recvice.Dates[5], recvice.Dates[4], recvice.Dates[3], recvice.Dates[2], recvice.Dates[1], recvice.Dates[0]] };
+   var yAxis = { title: { text: '(%)' } };
+   var plotOptions = { line: { dataLabels: { enabled: true }, enableMouseTracking: true } };
+   var series = [{
+     name: 'ATE',
+     data: [Number(recvice.ATE[6]), Number(recvice.ATE[5]), Number(recvice.ATE[4]), Number(recvice.ATE[3]), Number(recvice.ATE[2]), Number(recvice.ATE[1]), Number(recvice.ATE[0])]
+   }];
+   window.teShowChart('chart1');
+   $('#chart1').highcharts({
+     title: title, subtitle: subtitle, xAxis: xAxis, yAxis: yAxis, series: series, plotOptions: plotOptions
+   });}
+
+function chart2(recvice) {
+   var xAxis = { categories: ['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I'], crosshair: true };
+   var yAxis = { min: 0, title: { text: '百分比' } };
    var tooltip = {
-      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-      pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-         '<td style="padding:0"><b>{point.y:.2f} %</b></td></tr>',
-      footerFormat: '</table>',
-      shared: true,
-      useHTML: true
+     headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+     pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+       '<td style="padding:0"><b>{point.y:.2f} %</b></td></tr>',
+     footerFormat: '</table>', shared: true, useHTML: true
    };
-   var plotOptions = {
-      column: {
-         pointPadding: 0.2,
-         borderWidth: 0,
-		  dataLabels: {
-            enabled: true
-         }
-      }
-	  
-   };  
-   var credits = {
-      enabled: false
-   };
-   
-   var series= [{
-        name: 'ATE',
-              data: [Number(recvice.line_fpy[0]),Number(recvice.line_fpy[1]),Number(recvice.line_fpy[2]),Number(recvice.line_fpy[3]),Number(recvice.line_fpy[4]),Number(recvice.line_fpy[5]),Number(recvice.line_fpy[6]),Number(recvice.line_fpy[7])]
-        }/*,{
-	    name: 'AOIA',
-              data: [Number(recvice.aoia[0]),Number(recvice.aoia[1]),Number(recvice.aoia[2]),Number(recvice.aoia[3]),Number(recvice.aoia[4]),Number(recvice.aoia[5]),0,0]
-        },{
-	    name: 'AOIB',
-              data: [Number(recvice.aoib[0]),Number(recvice.aoib[1]),Number(recvice.aoib[2]),Number(recvice.aoib[3]),Number(recvice.aoib[4]),Number(recvice.aoib[5]),0,0]
-        }
-		*/
-		];     
-      
-   var json = {};   
-   json.chart = chart; 
-   json.title = title;   
-   json.subtitle = subtitle; 
-   json.tooltip = tooltip;
-   json.xAxis = xAxis;
-   json.yAxis = yAxis;  
-   json.series = series;
-   json.plotOptions = plotOptions;  
-   json.credits = credits;
-   $('#chart2').highcharts(json); 
+   var plotOptions = { column: { pointPadding: 0.2, borderWidth: 0, dataLabels: { enabled: true } } };
+   var series = [{
+     name: 'ATE',
+     data: [Number(recvice.line_fpy[0]), Number(recvice.line_fpy[1]), Number(recvice.line_fpy[2]), Number(recvice.line_fpy[3]), Number(recvice.line_fpy[4]), Number(recvice.line_fpy[5]), Number(recvice.line_fpy[6]), Number(recvice.line_fpy[7])]
+   }];
+   window.teShowChart('chart2');
+   $('#chart2').highcharts({
+     chart: { type: 'column' },
+     title: { text: '各线良率' },
+     subtitle: { text: 'Date:' + recvice.Dates[0] },
+     tooltip: tooltip, xAxis: xAxis, yAxis: yAxis, series: series,
+     plotOptions: plotOptions, credits: { enabled: false }
+   });
 }
-function chart3(recvice) {  
-   var chart = {
-      type: 'column'
-   };
-   var title = {
-      text: '各线停线次数'   
-   };
-   var subtitle = {
-      text: 'Date:'+recvice.Dates[6]+"--"+recvice.Dates[0]
-   };
-   var xAxis = {
-      categories: ['A','B','C','D','E','G','H','I'],
-      crosshair: true
-   };
-   var yAxis = {
-      min: 0,
-      title: {
-         text: '次'         
-      }      
-   };
+
+function chart3(recvice) {
    var tooltip = {
-      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-      pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-         '<td style="padding:0"><b>{point.y:.2f} </b></td></tr>',
-      footerFormat: '</table>',
-      shared: true,
-      useHTML: true
+     headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+     pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+       '<td style="padding:0"><b>{point.y:.2f} </b></td></tr>',
+     footerFormat: '</table>', shared: true, useHTML: true
    };
-   var plotOptions = {
-      column: {
-         pointPadding: 0.2,
-         borderWidth: 0,
-		  dataLabels: {
-            enabled: true
-         }
-      }
-	  
-   };  
-   var credits = {
-      enabled: false
-   };
-   
-   var series= [{
-        name: 'ATE',
-              data: [Number(recvice.ATE_C['A']),Number(recvice.ATE_C['B']),Number(recvice.ATE_C['C']),Number(recvice.ATE_C['D']),Number(recvice.ATE_C['E']),Number(recvice.ATE_C['G']),Number(recvice.ATE_C['H']),Number(recvice.ATE_C['I'])]
-        },{
-	  name: 'AOI',
-              data: [Number(recvice.AOI_C['A']),Number(recvice.AOI_C['B']),Number(recvice.AOI_C['C']),Number(recvice.AOI_C['D']),Number(recvice.AOI_C['E']),Number(recvice.AOI_C['G']),Number(recvice.AOI_C['H']),Number(recvice.AOI_C['I'])]
-        },{
-	  name: 'FT',
-              data: [Number(recvice.FT_C['A']),Number(recvice.FT_C['B']),Number(recvice.FT_C['C']),Number(recvice.FT_C['D']),Number(recvice.FT_C['E']),Number(recvice.FT_C['G']),Number(recvice.FT_C['H']),Number(recvice.FT_C['I'])]
-        }
-	
-		
-		];     
-      
-   var json = {};   
-   json.chart = chart; 
-   json.title = title;   
-   json.subtitle = subtitle; 
-   json.tooltip = tooltip;
-   json.xAxis = xAxis;
-   json.yAxis = yAxis;  
-   json.series = series;
-   json.plotOptions = plotOptions;  
-   json.credits = credits;
-   $('#chart2').highcharts(json); 
+   var series = [{
+     name: 'ATE',
+     data: [Number(recvice.ATE_C['A']), Number(recvice.ATE_C['B']), Number(recvice.ATE_C['C']), Number(recvice.ATE_C['D']), Number(recvice.ATE_C['E']), Number(recvice.ATE_C['G']), Number(recvice.ATE_C['H']), Number(recvice.ATE_C['I'])]
+   }, {
+     name: 'AOI',
+     data: [Number(recvice.AOI_C['A']), Number(recvice.AOI_C['B']), Number(recvice.AOI_C['C']), Number(recvice.AOI_C['D']), Number(recvice.AOI_C['E']), Number(recvice.AOI_C['G']), Number(recvice.AOI_C['H']), Number(recvice.AOI_C['I'])]
+   }, {
+     name: 'FT',
+     data: [Number(recvice.FT_C['A']), Number(recvice.FT_C['B']), Number(recvice.FT_C['C']), Number(recvice.FT_C['D']), Number(recvice.FT_C['E']), Number(recvice.FT_C['G']), Number(recvice.FT_C['H']), Number(recvice.FT_C['I'])]
+   }];
+   window.teShowChart('chart3');
+   $('#chart3').highcharts({
+     chart: { type: 'column' },
+     title: { text: '各线停线次数' },
+     subtitle: { text: 'Date:' + recvice.Dates[6] + '--' + recvice.Dates[0] },
+     tooltip: tooltip,
+     xAxis: { categories: ['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I'], crosshair: true },
+     yAxis: { min: 0, title: { text: '次' } },
+     series: series,
+     plotOptions: { column: { pointPadding: 0.2, borderWidth: 0, dataLabels: { enabled: true } } },
+     credits: { enabled: false }
+   });
 }
-function chart4(recvice) {  
-   var chart = {
-      type: 'column'
-   };
-   var title = {
-      text: '各线停线时间'   
-   };
-   var subtitle = {
-      text: 'Date:'+recvice.Dates[6]+"--"+recvice.Dates[0]
-   };
-   var xAxis = {
-      categories: ['A','B','C','D','E','G','H','I'],
-      crosshair: true
-   };
-   var yAxis = {
-      min: 0,
-      title: {
-         text: 'mins'         
-      }      
-   };
+
+function chart4(recvice) {
    var tooltip = {
-      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-      pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-         '<td style="padding:0"><b>{point.y:.f} mins</b></td></tr>',
-      footerFormat: '</table>',
-      shared: true,
-      useHTML: true
+     headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+     pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+       '<td style="padding:0"><b>{point.y:.2f} mins</b></td></tr>',
+     footerFormat: '</table>', shared: true, useHTML: true
    };
-   var plotOptions = {
-      column: {
-         pointPadding: 0.2,
-         borderWidth: 0,
-		  dataLabels: {
-            enabled: true
-         }
-      }
-	  
-   };  
-   var credits = {
-      enabled: false
-   };
-   
-   var series= [{
-      name: 'ATE',
-              data: [Number(recvice.ATE['A']),Number(recvice.ATE['B']),Number(recvice.ATE['C']),Number(recvice.ATE['D']),Number(recvice.ATE['E']),Number(recvice.ATE['G']),Number(recvice.ATE['H']),Number(recvice.ATE['I'])]
-        },{
-	  name: 'AOI',
-              data: [Number(recvice.AOI['A']),Number(recvice.AOI['B']),Number(recvice.AOI['C']),Number(recvice.AOI['D']),Number(recvice.AOI['E']),Number(recvice.AOI['G']),Number(recvice.AOI['H']),Number(recvice.AOI['I'])]
-        },{
-	  name: 'FT',
-              data: [Number(recvice.FT['A']),Number(recvice.FT['B']),Number(recvice.FT['C']),Number(recvice.FT['D']),Number(recvice.FT['E']),Number(recvice.FT['G']),Number(recvice.FT['H']),Number(recvice.FT['I'])]
-        }
-		];     
-      
-   var json = {};   
-   json.chart = chart; 
-   json.title = title;   
-   json.subtitle = subtitle; 
-   json.tooltip = tooltip;
-   json.xAxis = xAxis;
-   json.yAxis = yAxis;  
-   json.series = series;
-   json.plotOptions = plotOptions;  
-   json.credits = credits;
-   $('#chart3').highcharts(json); 
+   var series = [{
+     name: 'ATE',
+     data: [Number(recvice.ATE['A']), Number(recvice.ATE['B']), Number(recvice.ATE['C']), Number(recvice.ATE['D']), Number(recvice.ATE['E']), Number(recvice.ATE['G']), Number(recvice.ATE['H']), Number(recvice.ATE['I'])]
+   }, {
+     name: 'AOI',
+     data: [Number(recvice.AOI['A']), Number(recvice.AOI['B']), Number(recvice.AOI['C']), Number(recvice.AOI['D']), Number(recvice.AOI['E']), Number(recvice.AOI['G']), Number(recvice.AOI['H']), Number(recvice.AOI['I'])]
+   }, {
+     name: 'FT',
+     data: [Number(recvice.FT['A']), Number(recvice.FT['B']), Number(recvice.FT['C']), Number(recvice.FT['D']), Number(recvice.FT['E']), Number(recvice.FT['G']), Number(recvice.FT['H']), Number(recvice.FT['I'])]
+   }];
+   window.teShowChart('chart5');
+   $('#chart5').highcharts({
+     chart: { type: 'column' },
+     title: { text: '各线停线时间' },
+     subtitle: { text: 'Date:' + recvice.Dates[6] + '--' + recvice.Dates[0] },
+     tooltip: tooltip,
+     xAxis: { categories: ['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I'], crosshair: true },
+     yAxis: { min: 0, title: { text: 'mins' } },
+     series: series,
+     plotOptions: { column: { pointPadding: 0.2, borderWidth: 0, dataLabels: { enabled: true } } },
+     credits: { enabled: false }
+   });
+}
+
+function chart5(recvice) {
+   var plotOptions = { line: { dataLabels: { enabled: true }, enableMouseTracking: true } };
+   var series = [{
+     name: 'ATE',
+     data: [Number(recvice.ATE_V['A']), Number(recvice.ATE_V['B']), Number(recvice.ATE_V['C']), Number(recvice.ATE_V['D']), Number(recvice.ATE_V['E']), Number(recvice.ATE_V['G']), Number(recvice.ATE_V['H']), Number(recvice.ATE_V['I'])]
+   }, {
+     name: 'AOI',
+     data: [Number(recvice.AOI_V['A']), Number(recvice.AOI_V['B']), Number(recvice.AOI_V['C']), Number(recvice.AOI_V['D']), Number(recvice.AOI_V['E']), Number(recvice.AOI_V['G']), Number(recvice.AOI_V['H']), Number(recvice.AOI_V['I'])]
+   }, {
+     name: 'FT',
+     data: [Number(recvice.FT_V['A']), Number(recvice.FT_V['B']), Number(recvice.FT_V['C']), Number(recvice.FT_V['D']), Number(recvice.FT_V['E']), Number(recvice.FT_V['G']), Number(recvice.FT_V['H']), Number(recvice.FT_V['I'])]
+   }];
+   window.teShowChart('chart6');
+   $('#chart6').highcharts({
+     chart: { type: 'line' },
+     title: { text: '各线停机率' },
+     subtitle: { text: 'Date:' + recvice.Dates[0] },
+     xAxis: { categories: ['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I'] },
+     yAxis: { title: { text: '(%)' } },
+     series: series, plotOptions: plotOptions, credits: { enabled: false }
+   });
 }
 </script>
 </body>

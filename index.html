@@ -2,66 +2,255 @@
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8">
-    <title>登陆</title>
+    <title>用户登录 - TE 生产管理系统</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta http-equiv="Access-Control-Allow-Origin" content="*">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#1f6fb2">
     <link rel="stylesheet" href="layui/css/layui.css" media="all">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <style>
+      /* ================= 登录页样式（全部以 te- 前缀命名，避免影响其它页面） ================= */
+      *, *:before, *:after { box-sizing: border-box; }
+
+      html { height: 100%; }
+      body {
+        min-height: 100%;
+        margin: 0;
+        background: #2b7fc0;
+        background: radial-gradient(circle at 20% 12%, #4d9ede 0%, #2a72b4 45%, #124e86 100%);
+        font: 14px/1.5 "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* 粒子背景层（particleground 会把 canvas 插到这一层里）
+         注意：layui-bg-blue 会强制 color:#fff，所以它只能加在背景层上，
+         若加到 body 上会让卡片内的表单文字继承成白色而在白底上不可见。 */
+      .te-pg {
+        position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+        z-index: 0; overflow: hidden;
+      }
+
+      .te-login {
+        position: relative; z-index: 1;
+        min-height: 100vh; min-height: 100vh;
+        display: flex; align-items: center; justify-content: center;
+        padding: 32px 16px 72px; /* 下方留白避开右下角的多语言切换按钮 */
+      }
+
+      .te-card {
+        width: 100%; max-width: 380px;
+        background: rgba(255, 255, 255, .97);
+        border-radius: 12px;
+        box-shadow: 0 18px 40px rgba(6, 40, 70, .28), 0 2px 6px rgba(6, 40, 70, .12);
+        overflow: hidden;
+        animation: te-card-in .45s ease-out both;
+      }
+      @keyframes te-card-in {
+        from { opacity: 0; transform: translateY(18px) scale(.985); }
+        to   { opacity: 1; transform: none; }
+      }
+
+      .te-card-head {
+        display: flex; align-items: center; justify-content: center;
+        padding: 18px 20px 6px;
+        border-bottom: 1px solid #eef2f6;
+        background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
+      }
+      .te-card-head img { width: 30px; height: 30px; margin-right: 9px; }
+      .te-card-head span {
+        font-size: 17px; font-weight: 600; color: #1c4f7d; letter-spacing: .5px;
+      }
+
+      .te-card-body { padding: 22px 22px 24px; }
+
+      /* ---------- 表单 ---------- */
+      .te-login .layui-form-item { margin-bottom: 16px; }
+      .te-login .layui-form-label {
+        width: 58px; padding: 9px 6px 9px 0;
+        color: #54697f; font-size: 14px; text-align: right;
+      }
+      .te-login .layui-input-block { margin-left: 66px; min-height: 38px; }
+
+      .te-input-wrap { position: relative; }
+      .te-input-wrap .layui-input {
+        height: 38px; line-height: 38px; padding-left: 34px;
+        border-radius: 6px; border-color: #dbe3ec;
+        transition: border-color .18s, box-shadow .18s, background .18s;
+      }
+      .te-input-wrap .layui-input:hover { border-color: #b9cde0; }
+      .te-login .layui-input:focus {
+        border-color: #3d8fd1 !important;
+        box-shadow: 0 0 0 3px rgba(61, 143, 209, .14);
+      }
+      /* 输入框左侧小图标（内联 SVG，无外部依赖；背景图不会被多语言脚本翻译） */
+      .te-ico {
+        position: absolute; left: 10px; top: 50%; width: 18px; height: 18px;
+        margin-top: -9px; pointer-events: none; opacity: .55;
+        background-repeat: no-repeat; background-position: center; background-size: 17px 17px;
+      }
+      .te-ico-user {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c6ea8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-3.9 3.6-6.6 8-6.6s8 2.7 8 6.6'/%3E%3C/svg%3E");
+      }
+      .te-ico-lock {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c6ea8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='10.5' width='16' height='10.5' rx='2.2'/%3E%3Cpath d='M7.5 10.5V7.2a4.5 4.5 0 0 1 9 0v3.3'/%3E%3C/svg%3E");
+      }
+      .te-ico-code {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c6ea8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2.4'/%3E%3Cpath d='M7.5 15V9l4 6 4-6v6'/%3E%3C/svg%3E");
+      }
+      .te-input-wrap .layui-input.te-has-eye { padding-right: 36px; }
+
+      /* 密码显示/隐藏按钮 */
+      .te-eye {
+        position: absolute; right: 6px; top: 50%; width: 30px; height: 30px;
+        margin-top: -15px; border: 0; padding: 0; cursor: pointer;
+        background-color: transparent; border-radius: 6px;
+        background-repeat: no-repeat; background-position: center; background-size: 18px 18px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2374859a' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M1.8 12S5.7 5.8 12 5.8 22.2 12 22.2 12 18.3 18.2 12 18.2 1.8 12 1.8 12z'/%3E%3Ccircle cx='12' cy='12' r='3.1'/%3E%3C/svg%3E");
+      }
+      .te-eye:hover { background-color: #f1f6fb; }
+      .te-eye:focus { outline: none; box-shadow: 0 0 0 3px rgba(61, 143, 209, .18); }
+      .te-eye.te-eye-off {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2374859a' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M1.8 12S5.7 5.8 12 5.8 22.2 12 22.2 12 18.3 18.2 12 18.2 1.8 12 1.8 12z'/%3E%3Ccircle cx='12' cy='12' r='3.1'/%3E%3Cpath d='M4 20L20 4'/%3E%3C/svg%3E");
+      }
+
+      /* ---------- 验证码 ---------- */
+      .te-code-row { display: flex; align-items: stretch; }
+      .te-code-row .te-input-wrap { flex: 1 1 auto; min-width: 0; }
+      .te-code-pic {
+        flex: 0 0 42%; max-width: 132px; min-width: 90px;
+        margin-left: 8px; height: 38px; width: auto;
+        border: 1px solid #dbe3ec; border-radius: 6px; background: #f6f9fc;
+        cursor: pointer; -webkit-user-select: none; user-select: none;
+        transition: border-color .18s, box-shadow .18s;
+      }
+      .te-code-pic:hover { border-color: #9dc2e0; box-shadow: 0 0 0 3px rgba(61, 143, 209, .10); }
+
+      /* ---------- 记住密码 / 提示 ---------- */
+      .te-login .layui-form-checkbox[lay-skin="primary"] span { color: #54697f; }
+      .te-hint {
+        display: none; margin: -4px 0 14px 66px;
+        color: #e2823a; font-size: 12px; line-height: 18px;
+      }
+      .te-hint.te-show { display: block; }
+
+      /* ---------- 登录按钮 ---------- */
+      .te-btn {
+        height: 42px; line-height: 42px; font-size: 15px; letter-spacing: 4px;
+        border: 0; border-radius: 6px;
+        background: linear-gradient(135deg, #3f96d8 0%, #1f6fb2 100%);
+        box-shadow: 0 6px 14px rgba(31, 111, 178, .28);
+        transition: filter .18s, transform .06s, box-shadow .18s;
+      }
+      .te-btn:hover { filter: brightness(1.07); box-shadow: 0 8px 18px rgba(31, 111, 178, .34); }
+      .te-btn:active { transform: translateY(1px); }
+      .te-btn[disabled] { filter: grayscale(.25) brightness(.97); cursor: not-allowed; }
+      .te-loading-dot {
+        display: inline-block; width: 13px; height: 13px; margin-right: 8px;
+        vertical-align: -1px; border: 2px solid rgba(255, 255, 255, .45);
+        border-top-color: #fff; border-radius: 50%;
+        animation: te-spin .7s linear infinite;
+      }
+      @keyframes te-spin { to { transform: rotate(360deg); } }
+
+      .te-foot {
+        margin-top: 16px; text-align: center; color: #9aabbb; font-size: 12px;
+      }
+
+      /* 移动端微调 */
+      @media (max-width: 420px) {
+        .te-login { padding: 20px 12px 76px; }
+        .te-card-body { padding: 18px 16px 20px; }
+        .te-login .layui-form-label { width: 52px; font-size: 13px; }
+        .te-login .layui-input-block { margin-left: 60px; }
+        .te-hint { margin-left: 60px; }
+        .te-card-head span { font-size: 16px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .te-card { animation: none; }
+        .te-loading-dot { animation-duration: 1.6s; }
+      }
+    </style>
 </head>
 <body>
-<!-- 粒子背景层（particleground 会把 canvas 插入到该层内）
-     注意：layui-bg-blue 会强制 color:#fff，必须放在背景层而不是 body 上，
-     否则卡片内的 .layui-form-label / .layui-icon 继承成白色而在白底上不可见。 -->
-<div id="pg-bg" class="layui-bg-blue" style="position:fixed;left:0;top:0;width:100%;height:100%;z-index:0"></div>
 
-<div class="layui-container" style="position:relative;z-index:1">
-  <div class="layui-row" style="padding-top:16vh">
-    <div class="layui-col-md4 layui-col-md-offset4">
-      <div class="layui-card">
-        <div class="layui-card-header">用戶登录</div>
-        <div class="layui-card-body">
-          <form class="layui-form" action="">
-            <div class="layui-form-item">
-              <label class="layui-form-label">用户名</label>
-              <div class="layui-input-block">
-                <input type="text" name="username" lay-verify="required|account" placeholder="用户名或者邮箱" autocomplete="off" class="layui-input" value="ATE">
-              </div>
+<!-- 粒子背景层 -->
+<div id="pg-bg" class="te-pg layui-bg-blue"></div>
+
+<main class="te-login">
+  <div class="te-card">
+    <div class="te-card-head">
+      <img src="images/logo.png" alt="TE">
+      <span>用户登录</span>
+    </div>
+
+    <div class="te-card-body">
+      <form class="layui-form" action="javascript:;" autocomplete="on" novalidate>
+        <div class="layui-form-item">
+          <label class="layui-form-label" for="te-username">用户名</label>
+          <div class="layui-input-block">
+            <div class="te-input-wrap">
+              <i class="te-ico te-ico-user"></i>
+              <input id="te-username" type="text" name="username" value="ATE"
+                     lay-verify="required" lay-reqtext="用户名不能为空"
+                     placeholder="用户名或者邮箱" autocomplete="username"
+                     spellcheck="false" class="layui-input">
             </div>
-            <div class="layui-form-item">
-              <label class="layui-form-label">密码</label>
-              <div class="layui-input-block">
-                <input type="password" name="password" lay-verify="required|password" placeholder="密码" autocomplete="off" class="layui-input" value="1234">
-              </div>
-            </div>
-            <div class="layui-form-item">
-              <label class="layui-form-label">验证码</label>
-              <div class="layui-input-block">
-                <div class="layui-input-inline" style="width:55%;margin-right:0">
-                  <input type="text" name="captcha" lay-verify="required|captcha" placeholder="图形验证码" autocomplete="off" class="layui-input" value="xszg">
-                </div>
-                <div class="layui-input-inline" style="width:42%;margin-right:0">
-                  <img id="captchaPic" src="images/captcha.jpg" alt="验证码" style="height:38px;width:100%;border:1px solid #e6e6e6">
-                </div>
-              </div>
-            </div>
-            <div class="layui-form-item">
-              <div class="layui-input-block">
-                <input type="checkbox" name="rememberMe" value="true" lay-skin="primary" title="记住密码">
-              </div>
-            </div>
-            <div class="layui-form-item">
-              <button class="layui-btn layui-btn-normal layui-btn-fluid" lay-submit lay-filter="login">登 入</button>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label" for="te-password">密码</label>
+          <div class="layui-input-block">
+            <div class="te-input-wrap">
+              <i class="te-ico te-ico-lock"></i>
+              <input id="te-password" type="password" name="password" value="1234"
+                     lay-verify="required" lay-reqtext="密码不能为空"
+                     placeholder="密码" autocomplete="current-password"
+                     spellcheck="false" class="layui-input te-has-eye">
+              <button type="button" class="te-eye" id="te-eye"
+                      title="显示密码" aria-label="显示密码"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label" for="te-captcha">验证码</label>
+          <div class="layui-input-block">
+            <div class="te-code-row">
+              <div class="te-input-wrap">
+                <i class="te-ico te-ico-code"></i>
+                <input id="te-captcha" type="text" name="captcha" maxlength="6"
+                       lay-verify="required" lay-reqtext="验证码不能为空"
+                       placeholder="图形验证码" autocomplete="off"
+                       autocorrect="off" spellcheck="false" class="layui-input">
+              </div>
+              <img id="captchaPic" class="te-code-pic" src="images/captcha.jpg"
+                   alt="验证码" title="看不清？点击图片换一张">
+            </div>
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <input type="checkbox" name="rememberMe" value="true" lay-skin="primary" title="记住密码">
+          </div>
+        </div>
+
+        <div class="te-hint" id="te-hint"></div>
+
+        <div class="layui-form-item" style="margin-bottom:0">
+          <button class="layui-btn layui-btn-fluid te-btn" id="te-submit"
+                  lay-submit lay-filter="login">登 入</button>
+        </div>
+
+        <div class="te-foot">TE 生产管理系统</div>
+      </form>
     </div>
   </div>
-</div>
+</main>
 
 <script src="lib/jquery-3.4.1/jquery-3.4.1.min.js" charset="utf-8"></script>
 <script src="layui/layui.js" charset="utf-8"></script>
@@ -69,47 +258,279 @@
 <script src="lib/jq-module/jquery.particleground.min.js" charset="utf-8"></script>
 <script>
 layui.use(['form'], function () {
-  var form = layui.form,
-    layer = layui.layer;
+  'use strict';
 
-  // 登录过期的时候，跳出 ifram 框架
-  if (top.location != self.location) top.location = self.location;
+  var form = layui.form;
+  var layer = layui.layer;
+  var $ = layui.jquery || window.jQuery;   // layui 自带 jQuery，不重复引入
 
-  // 粒子线条背景
-  $(document).ready(function () {
-    $('#pg-bg').particleground({
-      dotColor: '#7ec7fd',
-      lineColor: '#7ec7fd'
-    });
+  var STORE_KEY = 'te-login-remember';
+  var SUBMIT_TEXT = '登 入';
+  var LOADING_TEXT = '登录中…';
+  var submitting = false;
+  var failed = 0;
+
+  /* ---------------- 小工具 ---------------- */
+
+  function msg(text, icon) {
+    // 动态文字由 i18n-runtime 接管翻译（它会重写 layer.msg）
+    layer.msg(text, { icon: icon || 2, anim: 6, offset: '20%', time: 2200 });
+  }
+
+  /** 兼容旧内核：trim / 空值判断（不用 String.prototype.trim） */
+  function trim(s) { return String(s == null ? '' : s).replace(/^[\s\u3000]+|[\s\u3000]+$/g, ''); }
+
+  function hint(text) {
+    var $h = $('#te-hint');
+    if (text) { $h.text(text).addClass('te-show'); } else { $h.text('').removeClass('te-show'); }
+  }
+
+  function busy(state) {
+    var $b = $('#te-submit');
+    if (state) {
+      $b.attr('disabled', 'disabled').data('text', SUBMIT_TEXT)
+        .html('<i class="te-loading-dot"></i><span data-te-text="' + LOADING_TEXT + '">' + LOADING_TEXT + '</span>');
+      $('#te-username, #te-password, #te-captcha, #te-eye').attr('disabled', 'disabled');
+    } else {
+      $b.removeAttr('disabled').html(SUBMIT_TEXT);
+      $('#te-username, #te-password, #te-captcha, #te-eye').removeAttr('disabled');
+    }
+  }
+
+  /* ---------------- 图形验证码（本地 canvas 生成，点击可换一张） ---------------- */
+
+  var codeAnswer = '';        // 当前正确答案（不区分大小写）
+  var canvasOK = true;        // 不支持 canvas 时退化为静态图片，跳过校验
+
+  function randomCode(len) {
+    // 去掉 0/O、1/I/l 等易混字符
+    var chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+    var out = '';
+    for (var i = 0; i < len; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+    return out;
+  }
+
+  function fallbackPic() {
+    canvasOK = false;
+    codeAnswer = '';
+    var img = document.getElementById('captchaPic');
+    img.src = 'images/captcha.jpg?t=' + new Date().getTime();
+  }
+
+  function drawCaptcha() {
+    var pic = document.getElementById('captchaPic');
+    var canvas = document.createElement('canvas');
+    if (!canvas.getContext) { fallbackPic(); return; }
+
+    var code = randomCode(4);
+    var dpr = window.devicePixelRatio || 1;
+    var W = 132, H = 38;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    var ctx = null;
+    try { ctx = canvas.getContext('2d'); } catch (e) { ctx = null; }
+    if (!ctx) { fallbackPic(); return; }
+    codeAnswer = code;
+    ctx.scale(dpr, dpr);
+
+    // 背景
+    var bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#f2f8fd');
+    bg.addColorStop(1, '#e3eefa');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // 干扰线
+    for (var i = 0; i < 5; i++) {
+      ctx.strokeStyle = 'rgba(' + rnd(90, 170) + ',' + rnd(120, 190) + ',' + rnd(170, 225) + ',0.55)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(rnd(0, W), rnd(0, H));
+      ctx.bezierCurveTo(rnd(0, W), rnd(0, H), rnd(0, W), rnd(0, H), rnd(0, W), rnd(0, H));
+      ctx.stroke();
+    }
+
+    // 干扰点
+    for (var j = 0; j < 34; j++) {
+      ctx.fillStyle = 'rgba(' + rnd(80, 180) + ',' + rnd(110, 190) + ',' + rnd(150, 220) + ',0.7)';
+      ctx.beginPath();
+      ctx.arc(rnd(0, W), rnd(0, H), rnd(0.6, 1.6), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 字符
+    var colors = ['#1f6fb2', '#2b8ab5', '#1d5c94', '#3a7fb8'];
+    var step = (W - 16) / code.length;
+    for (var k = 0; k < code.length; k++) {
+      var size = 20 + rnd(0, 4);
+      ctx.save();
+      var x = 9 + k * step + step / 2;
+      if (k === code.length - 1) x = Math.min(x, W - size * 0.85);
+      ctx.translate(x, 20 + rnd(-2, 3));
+      ctx.rotate((Math.random() * 30 - 15) * Math.PI / 180);
+      ctx.font = '700 ' + size + 'px "Arial Black", Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = colors[k % colors.length];
+      ctx.fillText(code.charAt(k), 0, 0);
+      ctx.restore();
+    }
+
+    pic.width = W * dpr;
+    pic.height = H * dpr;
+    pic.style.width = W + 'px';
+    pic.style.height = H + 'px';
+    pic.src = canvas.toDataURL('image/png');
+  }
+
+  function rnd(min, max) { return min + Math.random() * (max - min); }
+
+  $('#captchaPic').on('click', function () {
+    if (submitting) return;
+    drawCaptcha();
+    $('#te-captcha').val('').focus();
   });
 
+  /* ---------------- 记住密码（用户名 + 密码，仅存本机浏览器） ---------------- */
+
+  function storage(key, value) {
+    try {
+      if (value === undefined) return window.localStorage.getItem(key);
+      if (value === null) window.localStorage.removeItem(key);
+      else window.localStorage.setItem(key, value);
+    } catch (e) { /* 隐私模式等场景降级为不记忆 */ }
+    return null;
+  }
+
+  function restoreRemember() {
+    var raw = storage(STORE_KEY);
+    if (!raw) return;
+    var saved;
+    try { saved = JSON.parse(raw); } catch (e) { storage(STORE_KEY, null); return; }
+    if (!saved || !saved.u) return;
+    $('#te-username').val(saved.u);
+    $('#te-password').val(saved.p || '');
+    $('input[name="rememberMe"]').prop('checked', true);
+    form.render('checkbox');
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+
+  // 登录过期时跳出 iframe
+  if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { /* 跨域忽略 */ } }
+
+  // 粒子线条背景（页面里没有 jQuery 时静默跳过）
+  if ($ && $.fn && $.fn.particleground) {
+    $('#pg-bg').particleground({ dotColor: '#7ec7fd', lineColor: '#7ec7fd' });
+  }
+
+  restoreRemember();
+  drawCaptcha();
+
+  // 密码显示 / 隐藏
+  $('#te-eye').on('click', function () {
+    var $p = $('#te-password');
+    var show = $p.attr('type') === 'password';
+    $p.attr('type', show ? 'text' : 'password');
+    if (show) $(this).addClass('te-eye-off');
+    else $(this).removeClass('te-eye-off');
+    $(this).attr('title', show ? '隐藏密码' : '显示密码')
+      .attr('aria-label', show ? '隐藏密码' : '显示密码');
+    $p.focus();
+  });
+
+  // 大写锁定提示
+  $('#te-password').on('keyup keydown', function (e) {
+    var on = e.originalEvent && e.originalEvent.getModifierState
+      ? e.originalEvent.getModifierState('CapsLock') : false;
+    hint(on ? '大写锁定已开启' : '');
+  });
+
+  // 回车提交：聚焦任意输入框都能直接登录
+  $('#te-username, #te-password, #te-captcha').on('keydown', function (e) {
+    var code = e.keyCode || e.which;
+    if (code === 13 && !submitting) {
+      e.preventDefault();
+      $('#te-submit').trigger('click');
+    }
+  });
+
+  // 清空提示
+  $('#te-username, #te-password, #te-captcha').on('input', function () { hint(''); });
+
+  /* ---------------- 登录 ---------------- */
+
   form.on('submit(login)', function (data) {
-    data = data.field;
-    if (data.username === '') {
-      layer.msg('用户名不能为空');
-      return false;
-    }
-    if (data.password === '') {
-      layer.msg('密码不能为空');
-      return false;
-    }
-    if (data.captcha === '') {
-      layer.msg('验证码不能为空');
+    if (submitting) return false;
+
+    var field = data.field || {};
+    var username = trim(field.username);
+    var password = trim(field.password);
+    var captcha = trim(field.captcha).toUpperCase();
+    var remember = !!field.rememberMe;
+
+    if (!username) { msg('用户名不能为空'); return false; }
+    if (!password) { msg('密码不能为空'); return false; }
+    if (!captcha) { msg('验证码不能为空'); return false; }
+    if (canvasOK && captcha !== codeAnswer) {
+      msg('验证码错误，请重新输入');
+      drawCaptcha();
+      $('#te-captcha').val('').focus();
       return false;
     }
 
-    // 发起异步请求获取 key，并在回调中验证密码
-    $.post("php/getuser.php?q=" + data.username, {}, function (response) {
-      var key = response.trim(); // 确保去除空格
-      if (data.password !== key) {
-        layer.msg('密码错误');
-      } else {
-        layer.msg('登录成功');
-        window.location = 'main.html'; // 验证通过后跳转
+    submitting = true;
+    busy(true);
+
+    // 记住 / 忘记密码
+    if (remember) {
+      storage(STORE_KEY, JSON.stringify({ u: username, p: password }));
+    } else {
+      storage(STORE_KEY, null);
+    }
+
+    // 取用户密码后比对（接口路径与返回格式保持原样）
+    $.ajax({
+      type: 'POST',
+      url: 'php/getuser.php?q=' + encodeURIComponent(username),
+      dataType: 'text',
+      cache: false,
+      success: function (response) {
+        var key = trim(response);
+        if (!key) {
+          fail('用户名或密码错误');
+        } else if (password !== key) {
+          fail('密码错误');
+        } else {
+          storage('te-login-user', username);   // 供 main.html 顶部显示当前用户
+          busy(false);
+          $('#te-submit').html('登录成功').attr('disabled', 'disabled');
+          msg('登录成功', 1);
+          window.setTimeout(function () { window.location.href = 'main.html'; }, 600);
+          return;
+        }
+        submitting = false;
+        busy(false);
+      },
+      error: function (xhr, status) {
+        fail('网络异常，请稍后重试');
+        if (window.console && console.warn) console.warn('getuser.php 请求失败：', status || xhr.status);
+        submitting = false;
+        busy(false);
       }
     });
 
-    return false; // 阻止表单默认提交，等待异步结果
+    function fail(text) {
+      msg(text);
+      failed++;
+      if (failed >= 3) {                 // 连续失败后强制换一张验证码
+        failed = 0;
+        drawCaptcha();
+      }
+      $('#te-captcha').val('').focus();
+    }
+
+    return false;   // 阻止表单默认提交，等待异步结果
   });
 });
 </script>

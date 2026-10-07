@@ -215,7 +215,13 @@
     location.href = url + sep + 'lang=' + encodeURIComponent(lang);
   }
 
+  /** 页面被别的页面嵌着时（如 main.html 的内部窗口），不再画切换按钮，交给外层外壳 */
+  function embedded() {
+    try { return window.self !== window.top; } catch (e) { return true; }
+  }
+
   function buildSwitcher() {
+    if (embedded()) return;
     if (document.getElementById('te-lang-sw')) return;
     var style = document.createElement('style');
     style.textContent = CSS;
