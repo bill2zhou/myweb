@@ -48,6 +48,8 @@ function createApp({ rootDir, getDb }) {
   require('./routes/form')(app, ctx);
   require('./routes/handover')(app, ctx);
   require('./routes/search')(app, ctx);
+  // 「测试资料查询」页面用的同源转发：/fmdi、/everything（必须在静态资源之前注册）
+  require('./routes/forward')(app, ctx);
   require('./routes/test')(app, ctx);
   // 数据库管理（自带鉴权，须在静态资源处理之前注册）
   require('./routes/dbadmin')(app, ctx);

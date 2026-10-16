@@ -1,105 +1,978 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <meta http-equiv="refresh" content="1800;url=index.html">
-  <title>ATE资料查找</title>
-  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
-  <script src="../layui/layui.js"></script>
-  <script src="/js/i18n.js"></script>
-  <script>
-layui.use(['form', 'laydate'], function () {
-  var laydate = layui.laydate;
-  var form = layui.form;
-
-  laydate.render({ elem: '#StartTime' });
-  form.render();
-});
-
-function Serach() {
-  var st = StartTime.value;
-  var ln = document.getElementById("line").value;
-  var tm = document.getElementById("team").value;
-  var strsn = sn.value;
-  var str = tm + "," + ln + "," + st + "," + strsn;
-
-  if (window.XMLHttpRequest) {
-    xmlhttp = new XMLHttpRequest();
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测试资料查询</title>
+<style>
+  :root{
+    --bg:#0b0f1a;
+    --bg-2:#0e1424;
+    --card:#131b2c;
+    --card-2:#0f1626;
+    --border:#22304f;
+    --border-soft:#1b2740;
+    --text:#e7edfa;
+    --muted:#8a97b8;
+    --accent:#4f8cff;
+    --accent-2:#7c5cff;
+    --ok:#34d399;
+    --warn:#fbbf24;
+    --err:#f87171;
+    --mono:"Cascadia Mono",Consolas,"JetBrains Mono","Courier New",monospace;
   }
-  else {
-    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  *{box-sizing:border-box;}
+  /* 普通文档流：内容超出屏幕时整页正常滚动 */
+  body{
+    margin:0;padding:12px 18px 26px;
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(79,140,255,.20), transparent 60%),
+      radial-gradient(800px 460px at 88% 4%, rgba(124,92,255,.16), transparent 62%),
+      var(--bg);
+    color:var(--text);
+    font:14px/1.55 "Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
   }
-  xmlhttp.onreadystatechange = function () {
-    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-      document.getElementById("txtHint").innerHTML = xmlhttp.responseText;
-    }
+  .wrap{
+    width:100%;max-width:920px;margin:0 auto;
+    display:flex;flex-direction:column;gap:10px;
   }
-  xmlhttp.open("POST", "read.php?q=" + str, true);
-  xmlhttp.send();
-}
 
-function back() {
-  window.location.href = "/";
-}
-  </script>
+  header{display:flex;align-items:center;gap:12px;flex:0 0 auto;}
+  .logo{
+    width:38px;height:38px;border-radius:11px;flex:0 0 auto;
+    background:linear-gradient(140deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;
+    box-shadow:0 10px 26px -10px rgba(79,140,255,.85);
+  }
+  .logo svg{width:20px;height:20px;display:block;}
+  .title{font-size:17px;font-weight:650;letter-spacing:.3px;}
+  .sub{font-size:11.5px;color:var(--muted);margin-top:1px;}
+  .tag{
+    margin-left:auto;font-size:11px;color:var(--muted);
+    border:1px solid var(--border);border-radius:999px;padding:5px 11px;
+    background:rgba(255,255,255,.02);white-space:nowrap;
+  }
+
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--card-2));
+    border:1px solid var(--border-soft);border-radius:14px;
+    padding:12px 15px;box-shadow:0 18px 40px -30px rgba(0,0,0,.9);
+    flex:0 0 auto;
+  }
+  .card h2{
+    margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:1.4px;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  input[type=text]{
+    width:100%;padding:10px 13px;color:var(--text);
+    background:#0a1120;border:1px solid var(--border);border-radius:10px;
+    font:14.5px/1.3 var(--mono);letter-spacing:.4px;outline:none;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  input[type=text]::placeholder{color:#5b688a;}
+  input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,140,255,.18);}
+  #snInput{font-size:16px;padding:11px 14px;}
+  .scan{display:flex;gap:10px;margin-top:8px;}
+  .scan input{flex:1;}
+
+  button{
+    font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--border);
+    background:rgba(255,255,255,.03);color:var(--text);padding:10px 16px;
+    white-space:nowrap;transition:transform .08s,background .15s,border-color .15s,opacity .15s;
+  }
+  button:hover{background:rgba(255,255,255,.07);}
+  button:active{transform:translateY(1px);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  .primary{
+    border:none;font-weight:600;color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 12px 26px -14px rgba(79,140,255,.95);
+  }
+  .primary:hover{background:linear-gradient(135deg,#5f98ff,#8a6cff);}
+  .ghost{font-size:12.5px;padding:8px 13px;color:var(--muted);}
+
+  .status{display:flex;align-items:center;gap:9px;margin-top:9px;font-size:12px;color:var(--muted);min-height:18px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:#5b688a;flex:0 0 auto;}
+  .status.loading .dot{background:var(--accent);animation:pulse 1s infinite;}
+  .status.success .dot{background:var(--ok);}
+  .status.error .dot{background:var(--err);}
+  .status.warn .dot{background:var(--warn);}
+  .status.success{color:#b8f2da;}
+  .status.error{color:#ffc9c9;}
+  .status.warn{color:#ffe9b0;}
+  @keyframes pulse{0%,100%{opacity:.35;transform:scale(.85);}50%{opacity:1;transform:scale(1.15);}}
+
+  details{
+    border:1px solid var(--border-soft);border-radius:13px;
+    background:linear-gradient(180deg,var(--card),var(--card-2));overflow:hidden;
+    flex:0 0 auto;
+  }
+  summary{
+    list-style:none;cursor:pointer;padding:11px 15px;font-size:12.5px;
+    display:flex;align-items:center;gap:9px;color:var(--text);
+  }
+  summary::-webkit-details-marker{display:none;}
+  summary .chev{color:var(--muted);transition:transform .18s;font-size:11px;}
+  details[open] summary .chev{transform:rotate(90deg);}
+  summary .hint{margin-left:auto;font-size:11.5px;color:var(--muted);}
+  .body{padding:0 15px 14px;}
+  .note{font-size:11.5px;color:#6d7a9c;line-height:1.75;max-height:30vh;overflow:auto;}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);}
+  .field.wide{grid-column:1/-1;}
+  @media (max-width:640px){.grid{grid-template-columns:1fr;}}
+
+  .out-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+  .out-head h2{margin:0;}
+  pre{
+    margin:0;padding:9px 12px;border-radius:9px;
+    background:#080d1a;border:1px solid var(--border-soft);
+    font:12px/1.5 var(--mono);color:#cfe0ff;
+    white-space:pre-wrap;word-break:break-all;
+    min-height:72px;max-height:20vh;overflow:auto;
+  }
+  pre.empty{color:#4d5a7a;}
+  .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+
+  /* Everything 双窗口：窗口尽量大，超出部分列表内部滚动，页面整体仍可滚动 */
+  #evBox{display:flex;flex-direction:column;}
+  #evBox > .body{padding-bottom:12px;}
+  .ev-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:780px){.ev-grid{grid-template-columns:1fr;}}
+  .ev-pane{
+    min-width:0;border:1px solid var(--border-soft);border-radius:11px;padding:10px 12px;
+    background:rgba(255,255,255,.02);display:flex;flex-direction:column;
+  }
+  .ev-pane-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .ev-pane-title{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+  .ev-pane-ppid{font:12.5px/1.3 var(--mono);color:#cfe0ff;word-break:break-all;}
+  .ev-list{list-style:none;margin:6px 0 0;padding:0;flex:1 1 auto;min-height:120px;max-height:38vh;overflow:auto;}
+  .ev-list:empty{margin:0;}
+  .ev-item{
+    padding:7px 4px;border-top:1px solid var(--border-soft);
+    font:12px/1.5 var(--mono);cursor:pointer;border-radius:6px;
+  }
+  .ev-item:first-child{border-top:none;}
+  .ev-item:hover{background:rgba(79,140,255,.10);}
+  .ev-name{color:#cfe0ff;}
+  .ev-path{color:var(--muted);font-size:11px;word-break:break-all;}
+  .ev-meta{color:#6d7a9c;font-size:11px;margin-top:2px;}
+  .ev-size{color:#9fb6e8;margin-right:10px;}
+  .ev-pane .status{margin-top:6px;}
+
+  /* 屏幕较矮时压缩上部，尽量让 Everything 窗口一屏可见（不够就整页滚动） */
+  @media (max-height:820px){
+    body{padding:8px 14px 18px;}
+    .sub{display:none;}
+    .logo{width:32px;height:32px;border-radius:9px;}
+    .logo svg{width:17px;height:17px;}
+    .card{padding:10px 13px;}
+    .card h2{margin-bottom:6px;}
+    #snInput{padding:9px 12px;font-size:15px;}
+    button{padding:9px 14px;}
+    pre{min-height:56px;max-height:18vh;padding:8px 11px;}
+    summary{padding:9px 14px;}
+    .ev-list{min-height:110px;max-height:32vh;}
+    .ev-pane{padding:8px 10px;}
+  }
+  code{background:rgba(255,255,255,.06);border-radius:5px;padding:1px 5px;font-family:var(--mono);font-size:11.5px;}
+</style>
 </head>
-<body class="layui-bg-gray">
+<body>
+<div class="wrap">
 
-<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
-  <div class="layui-card">
-    <div class="layui-card-header">ATE资料查找</div>
-    <div class="layui-card-body">
-      <div class="layui-form">
-        <div class="layui-form-item">
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:60px">部门</label>
-            <div class="layui-input-inline" style="width:110px">
-              <select id="team" name="TEAMS">
-                <option value="ATE">部门:</option>
-                <option value="ATE">ATE</option>
-              </select>
-            </div>
-          </div>
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:60px">线别</label>
-            <div class="layui-input-inline" style="width:110px">
-              <select id="line" name="LINES">
-                <option value="ALL">线别:</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-                <option value="F">F</option>
-                <option value="G">G</option>
-                <option value="H">H</option>
-                <option value="I">I</option>
-                <option value="ALL">ALL</option>
-              </select>
-            </div>
-          </div>
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:60px">日期</label>
-            <div class="layui-input-inline" style="width:150px">
-              <input id="StartTime" type="text" class="layui-input" placeholder="请选择日期" autocomplete="off">
-            </div>
-          </div>
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:50px">SN</label>
-            <div class="layui-input-inline" style="width:200px">
-              <input id="sn" type="text" class="layui-input" placeholder="请输入条码" autocomplete="off">
-            </div>
-          </div>
-          <div class="layui-inline">
-            <button id="btn-search" type="button" class="layui-btn layui-btn-sm" onclick="Serach()">查询记录</button>
-            <button id="btn-back" type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="back()">退出</button>
-          </div>
-        </div>
-      </div>
-      <div id="txtHint" class="layui-text" style="min-height:600px">请输入条码...</div>
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="3"></rect>
+        <path d="M8 9h8M8 13h8M8 17h4"></path>
+      </svg>
     </div>
-  </div>
+    <div>
+      <div class="title">测试资料查询</div>
+      <div class="sub">扫描 SN 查询 BOM / PPID / 站点信息，并自动检索测试文件</div>
+    </div>
+    <div class="tag" id="envTag">—</div>
+  </header>
+
+  <section class="card">
+    <h2>扫描输入</h2>
+    <div class="scan">
+      <input id="snInput" type="text" autocomplete="off" spellcheck="false"
+             placeholder="扫描或输入 SN，回车查询（自动截取 _ 之前的部分）">
+      <button id="btnQuery" class="primary">查询</button>
+    </div>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">等待扫描…</span></div>
+  </section>
+
+  <section class="card">
+    <div class="out-head">
+      <h2>查询结果</h2>
+    </div>
+    <pre id="output" class="empty">MODELNAME
+SKU
+;station_check
+SN_PPID_MAC
+...</pre>
+  </section>
+
+  <details id="evBox" open>
+    <summary><span class="chev">▶</span>Everything 搜索结果<span class="hint">查询后自动搜索两个 PPID</span></summary>
+    <div class="body">
+      <div class="ev-grid">
+        <section class="ev-pane">
+          <div class="ev-pane-head">
+            <span class="ev-pane-title">PPID 1</span>
+            <span class="ev-pane-ppid" id="evPpid1">—</span>
+          </div>
+          <div class="status" id="evStatus1"><span class="dot"></span><span id="evStatusText1">等待查询…</span></div>
+          <ul class="ev-list" id="evList1"></ul>
+        </section>
+        <section class="ev-pane">
+          <div class="ev-pane-head">
+            <span class="ev-pane-title">PPID 2</span>
+            <span class="ev-pane-ppid" id="evPpid2">—</span>
+          </div>
+          <div class="status" id="evStatus2"><span class="dot"></span><span id="evStatusText2">等待查询…</span></div>
+          <ul class="ev-list" id="evList2"></ul>
+        </section>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="chev">▶</span>接口设置<span class="hint" id="urlHint"></span></summary>
+    <div class="body">
+      <div class="grid">
+        <div class="field wide">
+          <label for="cfgUrl">URL（可填同源转发 /fmdi）</label>
+          <input id="cfgUrl" type="text" spellcheck="false"
+                 placeholder="http://192.188.0.13:9092/FMDI/SMT/FTSTDCHECK.ashx 或 /fmdi">
+        </div>
+        <div class="field"><label for="cfgCustomer">customer</label><input id="cfgCustomer" type="text"></div>
+        <div class="field"><label for="cfgGroup">group</label><input id="cfgGroup" type="text"></div>
+        <div class="field"><label for="cfgLine">line</label><input id="cfgLine" type="text"></div>
+        <div class="field"><label for="cfgSite">site</label><input id="cfgSite" type="text"></div>
+        <div class="field wide"><label for="cfgIntl">intl</label><input id="cfgIntl" type="text"></div>
+      </div>
+      <div class="actions">
+        <button id="btnSaveCfg" class="primary">保存设置</button>
+        <button id="btnResetCfg" class="ghost">恢复默认</button>
+        <span class="hint" id="cfgMsg" style="align-self:center;font-size:11.5px;color:var(--muted);"></span>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="chev">▶</span>Everything 设置<span class="hint" id="evUrlHint"></span></summary>
+    <div class="body">
+      <div class="grid">
+        <div class="field wide">
+          <label for="cfgEvUrl">地址（可填同源转发 /everything）</label>
+          <input id="cfgEvUrl" type="text" spellcheck="false">
+        </div>
+        <div class="field"><label for="cfgEvUser">用户名</label><input id="cfgEvUser" type="text" spellcheck="false"></div>
+        <div class="field"><label for="cfgEvPass">密码</label><input id="cfgEvPass" type="text" spellcheck="false"></div>
+        <div class="field"><label for="cfgEvCount">最多显示条数</label><input id="cfgEvCount" type="text"></div>
+      </div>
+      <div class="actions">
+        <button id="btnSaveEv" class="primary">保存设置</button>
+        <button id="btnResetEv" class="ghost">恢复默认</button>
+        <span class="hint" id="evCfgMsg" style="align-self:center;font-size:11.5px;color:var(--muted);"></span>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="chev">▶</span>说明<span class="hint">解析规则 / 跨域限制 / Everything 字段</span></summary>
+    <div class="body">
+      <div class="note">
+        查询逻辑与 WinForms 版一致 —— SN 以 <code>_</code> 分割取第一段，长度大于 10 才请求接口；
+        接口返回内容按 <code>SET SKU=</code>、<code>SET MODELNAME=</code>、<code>SET SN=</code>、<code>SET SNMULTI=</code>、
+        <code>SET SSNMULTI=</code>、<code>SET SNMACMULTI=</code>、<code>SET GROUPMULTI=</code> 等规则解析，输出 model、sku、站点及各板卡 SN_PPID_MAC。<br>
+        跨域限制：浏览器只允许页面请求<b>同源</b>地址，<code>协议 + 主机 + 端口</code> 任意一项不同都算跨域。
+        页面若放在 <code>http://192.188.0.240</code>，则 <code>http://192.188.0.13:9092</code>（主机不同）会被拦截，
+        <code>http://192.188.0.240:2016</code>（端口不同）视服务端响应而定。当前采用的做法：<br>
+        ① <b>FMDI 查询走同源转发</b>（两种做法任选其一）：<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;a) 运行 <code>web-proxy</code> 里的同源转发服务：<code>测试资料查询代理.exe</code>（免装运行环境，双击即跑）
+        或 <code>proxy.js</code>（Node）——它同时托管页面并转发接口，
+        改用 <code>http://&lt;该机器IP&gt;:8080/</code> 打开页面，接口地址填 <code>/fmdi</code>、Everything 地址填 <code>/everything</code>；<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;b) 把本页直接放到接口所在站点（<code>192.188.0.13:9092</code>）目录下，接口地址改用直连，同样同源；<br>
+        ② <b>Everything 也走同源转发</b>：地址填 <code>/everything</code>（转发服务会代加 <code>engineer</code> 的 Basic 认证），
+        经 http(s) 打开页面时默认就是该地址——Everything 的 HTTP 服务不返回 CORS 响应头，
+        直连 <code>http://192.188.0.240:2016</code> 必被浏览器拦截；<br>
+        Everything 搜索：每次查询成功后，自动取回传里的前两个 PPID，分别调用 Everything HTTP 服务（默认 <code>http://192.188.0.240:2016</code>，账号 <code>engineer</code>）
+        搜索并显示在两个并排窗口里，每条结果显示文件名、完整路径、大小与修改时间，点条目可复制完整路径。
+        大小字段兼容 <code>size</code> / <code>file_size</code> / <code>length</code> 等命名及数字、数字字符串、可读文本三种类型；
+        若显示为「大小 —」，状态行会给出服务端实际返回的字段名，悬停条目可看到原始 JSON。
+      </div>
+    </div>
+  </details>
+
 </div>
 
+<script>
+'use strict';
+
+/* 默认配置：对应 App.config 中 url / customer / group / site / line */
+const DEFAULTS = {
+  url: 'http://192.188.0.13:9092/FMDI/SMT/FTSTDCHECK.ashx',
+  customer: 'SMT',
+  group: 'ATE',
+  site: 'CD10',
+  line: 'CD2SMTA',
+  intl: '0.0.0.11-StandardClientImpl.dll-7.0.0.0',
+  evUrl: 'http://192.188.0.240:2016',
+  evUser: 'engineer',
+  evPass: 'engineer',
+  evCount: '50'
+};
+const EV_KEYS = ['evUrl', 'evUser', 'evPass', 'evCount'];
+const CFG_KEY = 'fmdi_bom_config';
+
+const PATTERNS = {
+  sku:     '.*SET SKU=(\\w+).*',
+  model:   '.*SET MODELNAME=\\s*(\\w+).*',
+  sn1:     '.*SET SN=(\\d+).*',
+  bars:    '.*SET SNMULTI=(.*);',
+  mac1:    '.*SET MAC_LAN_1=(\\w+).*',
+  macs:    '.*SET MACMULTI_LAN_1=(.*);',
+  barMac:  '.*SET SNMACMULTI=(.*);',
+  ppid1:   '.*SET SSN=(\\w+).*',
+  ppids:   '.*SET SSNMULTI=(.*);',
+  station: '.*SET GROUPMULTI=(.*);'
+};
+
+/* ---------- 对应 C# Refun.getbomstr：取最后一次匹配的 group1，group2 非空则用 _ 拼接 ---------- */
+function getbomstr(pattern, matstr) {
+  const re = new RegExp(pattern, 'gi');
+  let output = '';
+  let m;
+  while ((m = re.exec(matstr)) !== null) {
+    output = m[1] === undefined ? '' : m[1];
+    if (m[2] !== undefined && m[2].length > 0) output = output + '_' + m[2];
+    if (m.index === re.lastIndex) re.lastIndex++;
+  }
+  return output;
+}
+
+/* ---------- 对应 C# Getbom.getbom 的解析部分 ---------- */
+let lastParsed = null;   // parseBom 顺带产出的结构化结果，供界面按钮使用
+
+function parseBom(text) {
+  const sku     = getbomstr(PATTERNS.sku, text);
+  const model   = getbomstr(PATTERNS.model, text);
+  const sn1     = getbomstr(PATTERNS.sn1, text);
+  const bars    = getbomstr(PATTERNS.bars, text);
+  const barMac  = getbomstr(PATTERNS.barMac, text);
+  const ppids   = getbomstr(PATTERNS.ppids, text);
+  const station = getbomstr(PATTERNS.station, text);
+
+  const boards = [];
+  const subBoards = [];
+  const pairs = [];  // SNMACMULTI 顺序配对的 [SN, MAC]，同一条 SN 可重复出现
+
+  /* SNMACMULTI：13 位 SN 后面紧跟 12 位 MAC，成对出现 */
+  if (barMac.length > 0) {
+    const arr = barMac.split(';');
+    for (let i = 0; i < arr.length; i++) {
+      if (i < arr.length - 1) {
+        if (arr[i].length === 13) {
+          pairs.push([arr[i], arr[i + 1].length === 12 ? arr[i + 1] : '']);
+        }
+      } else if (arr[i].length === 13) {
+        pairs.push([arr[i], '']);
+      }
+    }
+  }
+
+  const snArr      = bars.length    > 0 ? bars.split(';')    : [];
+  const ppidArr    = ppids.length   > 0 ? ppids.split(';')   : [];
+  const stationArr = station.length > 0 ? station.split(';') : [];
+  const isppid = snArr.length > 0 && ppidArr.length > 0;
+
+  if (snArr.length > 0 && stationArr.length > 0 && snArr.length !== stationArr.length) {
+    throw new Error('FMDI回传有误：station与SN数量不同');
+  }
+  if (snArr.length > 0 && ppidArr.length > 0 && snArr.length !== ppidArr.length) {
+    throw new Error('FMDI回传有误：PPID与SN数量不同');
+  }
+
+  const head8 = s => (s.length >= 9 ? s.substring(1, 9) : s);
+  let stationCheck = '';
+
+  /* 按 SNMACMULTI 的配对顺序，与 SSNMULTI / GROUPMULTI 按位对齐（同一条 SN 可重复，不能用键查表） */
+  const rows = [];   // 每条板卡记录，供界面上方的 PPID 按钮使用
+  pairs.forEach((pair, i) => {
+    const key = pair[0];
+    const mac = pair[1];
+    const ppid = isppid ? (ppidArr[i] || '') : '';
+    const sta  = stationArr[i] || '';
+    const isMain = (sn1 === key) || (head8(sn1) === head8(key));
+    const line = isppid ? key + '_' + ppid + '_' + mac : key + '__' + mac;
+    if (isMain) boards.push(line); else subBoards.push(line);
+    stationCheck = stationCheck + ';' + sta;
+    rows.push({ sn: key, ppid: ppid, mac: mac, station: sta, isMain: isMain });
+  });
+
+  let allSn = '';
+  for (let i = 0; i < boards.length; i++)    allSn += boards[i] + '\r\n';
+  for (let i = 0; i < subBoards.length; i++) allSn += subBoards[i] + '\r\n';
+
+  lastParsed = { model: model, sku: sku, stationCheck: stationCheck, rows: rows };
+  return model + '\r\n' + sku + '\r\n' + stationCheck + '\r\n' + allSn + '\r\n';
+}
+
+/* ---------- 响应处理：接口返回 XML，取根节点文本内容 ---------- */
+function xmlToText(raw) {
+  if (!raw.trimStart().startsWith('<')) return raw;   // 接口直接回传纯文本（如 SET RESULT=PASS…）
+  try {
+    const doc = new DOMParser().parseFromString(raw, 'application/xml');
+    if (doc && doc.documentElement && doc.documentElement.nodeName !== 'parsererror' &&
+        !doc.getElementsByTagName('parsererror').length) {
+      return doc.documentElement.textContent || '';
+    }
+  } catch (e) { /* 非 XML，按纯文本处理 */ }
+  return raw;
+}
+
+/* 跨域失败时给出可执行提示：把页面源与目标源都带出来（同主机不同端口也算跨域） */
+function corsHint(targetUrl) {
+  const raw = targetUrl || '';
+  let target = raw;
+  try {
+    target = new URL(raw, location.href).origin;   // 支持相对路径写法
+  } catch (e) { /* URL 不合法时保留原文 */ }
+  const page = (location.protocol === 'file:') ? 'file://（本机文件）' : location.origin;
+  if (page === target) return '页面与目标同源，应为服务未启动或网络不通';
+  if (/:2016\/?$/i.test(raw)) {
+    return '请求被浏览器同源策略拦截：Everything 的 HTTP 服务不返回 CORS 响应头，直连必然被拦。'
+         + '请把 Everything 地址改成 /everything（由同源转发服务代加 Basic 认证，用户名/密码仍填 engineer）';
+  }
+  return '请求被浏览器同源策略拦截：页面源 ' + page + ' → 目标源 ' + target +
+         '（主机或端口不同即属跨域），目标未返回 CORS 响应头。' +
+         '可改用同源转发服务打开本页（web-proxy 里的「测试资料查询代理.exe」），' +
+         '或让运维在目标站点加响应头 Access-Control-Allow-Origin: *';
+}
+
+/* 接口地址支持两种写法：完整地址 http://ip:port/... 或同源相对路径 /fmdi/... */
+function buildUrl(sn, cfg) {
+  const q = new URLSearchParams({
+    sn: sn,
+    customer: cfg.customer,
+    group: cfg.group,
+    line: cfg.line,
+    site: cfg.site,
+    intl: cfg.intl
+  });
+  return cfg.url + (cfg.url.indexOf('?') === -1 ? '?' : '&') + q.toString();
+}
+
+async function fetchBomText(sn, cfg) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const resp = await fetch(buildUrl(sn, cfg), { method: 'GET', signal: controller.signal });
+    const text = await resp.text();
+    if (!resp.ok) {
+      /* 出错时把服务端/转发器返回的文字带出来（例如「接口转发失败: ...」） */
+      const detail = text.trim() ? '：' + text.trim().replace(/\s+/g, ' ').slice(0, 200) : '';
+      throw new Error('HTTP ' + resp.status + detail);
+    }
+    if (!text.trim()) throw new Error('接口返回空内容（HTTP ' + resp.status + '）');
+    return text;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ---------- Everything HTTP 服务查询 ---------- */
+function basicAuth(user, pass) {
+  const bytes = new TextEncoder().encode(user + ':' + pass);
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return 'Basic ' + btoa(bin);
+}
+
+function buildEvUrl(kw, cfg) {
+  const u = new URL(cfg.evUrl, location.href);   // 支持相对路径（同源反向代理）
+  const q = u.searchParams;
+  q.set('search', kw);
+  q.set('json', '1');
+  q.set('path_column', '1');
+  q.set('size_column', '1');
+  q.set('date_modified_column', '1');
+  q.set('count', String(Math.max(1, parseInt(cfg.evCount, 10) || 50)));
+  return u.toString();
+}
+
+async function fetchEverything(kw, cfg) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  const headers = { 'Accept': 'application/json' };
+  if (cfg.evUser || cfg.evPass) headers.Authorization = basicAuth(cfg.evUser, cfg.evPass);
+  try {
+    const resp = await fetch(buildEvUrl(kw, cfg), {
+      method: 'GET', headers: headers, cache: 'no-store', signal: controller.signal
+    });
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error('认证失败（HTTP ' + resp.status + '），请检查用户名/密码');
+    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error('返回内容不是 JSON，请确认地址是 Everything 的 HTTP 服务：' + text.slice(0, 80));
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function humanSize(n) {
+  if (typeof n !== 'number' || !isFinite(n)) return '';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  let v = n;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return (i === 0 ? v : v.toFixed(2)) + ' ' + units[i];
+}
+
+function humanTime(v) {
+  if (typeof v === 'number' && v > 0) return new Date(v * 1000).toLocaleString();
+  return typeof v === 'string' ? v : '';
+}
+
+/* ---- 不同 Everything 版本/配置的字段名、类型都不一样，这里做兼容取值 ---- */
+function pickField(obj, names) {
+  if (!obj || typeof obj !== 'object') return '';
+  const keys = Object.keys(obj);
+  for (const n of names) {
+    if (Object.prototype.hasOwnProperty.call(obj, n) && obj[n] !== null && obj[n] !== '') return n;
+  }
+  for (const n of names) {
+    const hit = keys.find(k => k.toLowerCase() === n.toLowerCase());
+    if (hit) return hit;
+  }
+  for (const n of names) {
+    const hit = keys.find(k => k.toLowerCase().indexOf(n.toLowerCase()) !== -1);
+    if (hit) return hit;
+  }
+  return '';
+}
+
+/* 大小：可能是数字、数字字符串（含千分位）或已经是 "1.5 KB" 这样的文本 */
+function sizeTextOf(obj) {
+  const key = pickField(obj, ['size', 'file size', 'filesize', 'file_size', 'length', 'bytes', 'size_bytes']);
+  if (!key) return { text: '大小 —', bytes: null };
+  const v = obj[key];
+
+  if (typeof v === 'number' && isFinite(v)) {
+    return { text: '大小 ' + humanSize(v), bytes: v };
+  }
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (s && /^[\d.,\s]+$/.test(s)) {
+      const num = Number(s.replace(/[,\s]/g, ''));
+      if (isFinite(num)) return { text: '大小 ' + humanSize(num), bytes: num };
+    }
+    if (s) return { text: '大小 ' + s, bytes: null };   // 服务器已给可读文本，直接用
+  }
+  return { text: '大小 —', bytes: null };
+}
+
+function timeTextOf(obj) {
+  const key = pickField(obj, ['date_modified', 'date modified', 'modified', 'date', 'last_modified', 'mtime']);
+  if (!key) return '';
+  const v = obj[key];
+  if (typeof v === 'number' && isFinite(v) && v > 0) {
+    const ms = v > 1e12 ? v : v * 1000;   // 秒 / 毫秒都能处理
+    return '修改 ' + new Date(ms).toLocaleString();
+  }
+  return typeof v === 'string' && v ? '修改 ' + v : '';
+}
+
+/* ---------- Everything 双窗口：分别显示前两个 PPID 的文件 ---------- */
+const EV_PANES = [
+  { list: 'evList1', status: 'evStatus1', statusText: 'evStatusText1', ppid: 'evPpid1' },
+  { list: 'evList2', status: 'evStatus2', statusText: 'evStatusText2', ppid: 'evPpid2' }
+];
+
+function evSetStatus(idx, text, kind) {
+  setStatusTo(EV_PANES[idx].status, EV_PANES[idx].statusText, text, kind);
+}
+
+function clearEvPane(idx) {
+  evSetStatus(idx, '等待查询…', '');
+  const list = $(EV_PANES[idx].list);
+  if (list) list.innerHTML = '';
+  const lab = $(EV_PANES[idx].ppid);
+  if (lab) lab.textContent = '—';
+}
+
+function clearEvPanes() {
+  EV_PANES.forEach((pane, i) => clearEvPane(i));
+}
+
+function renderEverythingList(idx, data, kw) {
+  const list = $(EV_PANES[idx].list);
+  if (!list) return;
+  list.innerHTML = '';
+
+  /* results 有时是对象或缺失，这里都兜住 */
+  let items = [];
+  if (data && Array.isArray(data.results)) items = data.results;
+  else if (data && data.results && typeof data.results === 'object') items = Object.keys(data.results).map(k => data.results[k]);
+  const total = data && (typeof data.totalItems === 'number' || typeof data.totalItems === 'string')
+    ? data.totalItems : items.length;
+
+  if (!items.length) {
+    const keys = (data && typeof data === 'object') ? Object.keys(data).slice(0, 8).join(', ') : String(data).slice(0, 60);
+    evSetStatus(idx, '未找到与「' + kw + '」匹配的文件（返回结构：' + keys + '）', 'warn');
+    return;
+  }
+
+  let sizeMissing = 0;
+  let sampleKeys = '';
+
+  items.forEach(r => {
+    const li = document.createElement('li');
+    li.className = 'ev-item';
+    const raw = (r && typeof r === 'object') ? r : { name: String(r) };
+    const nameKey = pickField(raw, ['name', 'filename', 'file_name']);
+    const pathKey = pickField(raw, ['path', 'full_path', 'fullpath', 'location', 'directory']);
+    const full = (pathKey ? raw[pathKey] : '') || (nameKey ? raw[nameKey] : '') || JSON.stringify(raw);
+    li.title = '点击复制：' + full;
+
+    const name = document.createElement('div');
+    name.className = 'ev-name';
+    name.textContent = (nameKey ? raw[nameKey] : '') || full;
+
+    const p = document.createElement('div');
+    p.className = 'ev-path';
+    p.textContent = (pathKey && raw[pathKey] !== name.textContent) ? raw[pathKey] : '';
+
+    const meta = document.createElement('div');
+    meta.className = 'ev-meta';
+    const info = sizeTextOf(raw);
+    const size = document.createElement('span');
+    size.className = 'ev-size';
+    size.textContent = info.text;
+    if (info.bytes !== null) size.title = info.bytes.toLocaleString() + ' 字节';
+    else {
+      sizeMissing++;
+      li.title = '点击复制：' + full + '\n服务端原始 JSON：' + JSON.stringify(raw);
+    }
+    meta.appendChild(size);
+
+    if (String(pickField(raw, ['type']) ? raw[pickField(raw, ['type'])] : '').toLowerCase() === 'folder') {
+      meta.appendChild(document.createTextNode('文件夹  '));
+    }
+    const time = timeTextOf(raw);
+    if (time) meta.appendChild(document.createTextNode(time));
+
+    li.appendChild(name);
+    if (p.textContent) li.appendChild(p);
+    li.appendChild(meta);
+
+    li.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(full);
+        evSetStatus(idx, '已复制：' + full, 'success');
+      } catch (e) {
+        evSetStatus(idx, '复制失败，请手动选择路径', 'warn');
+      }
+    });
+    list.appendChild(li);
+
+    if (!sampleKeys) sampleKeys = Object.keys(raw).join(', ');
+  });
+
+  if (sizeMissing) {
+    /* 全是「大小 —」时把服务端返回的字段名带出来，便于确认是字段名不同还是服务端未返回 */
+    evSetStatus(idx, '共 ' + total + ' 条 · 返回字段：' + sampleKeys, 'warn');
+  } else {
+    evSetStatus(idx, '共 ' + total + ' 条，显示前 ' + items.length + ' 条 · 点击复制路径', 'success');
+  }
+}
+
+async function runEverythingPane(idx, kw) {
+  const word = (kw || '').trim();
+  const list = $(EV_PANES[idx].list);
+  if (list) list.innerHTML = '';
+  const lab = $(EV_PANES[idx].ppid);
+  if (lab) lab.textContent = word || '—';
+
+  if (!word) {
+    evSetStatus(idx, '本次回传没有第 ' + (idx + 1) + ' 个 PPID', 'warn');
+    return;
+  }
+
+  evSetStatus(idx, '正在搜索…', 'loading');
+  try {
+    const data = await fetchEverything(word, getConfig());
+    renderEverythingList(idx, data, word);
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? '请求超时（15s）' : e.message;
+    const tip = /Failed to fetch|NetworkError|Load failed/i.test(msg)
+      ? '（' + corsHint(getConfig().evUrl) + '）'
+      : '';
+    evSetStatus(idx, '搜索失败：' + msg + tip, 'error');
+  }
+}
+
+/* 查询结束后，自动把前两个 PPID 分别送给两个窗口 */
+function runEverythingPanes(ppids) {
+  const list = (ppids || []).slice(0, 2);
+  EV_PANES.forEach((pane, i) => { runEverythingPane(i, list[i] || ''); });
+}
+
+/* ---------- 页面 ---------- */
+const $ = id => document.getElementById(id);
+
+function setStatusTo(boxId, textId, text, kind) {
+  const box = $(boxId);
+  if (!box) return;
+  box.className = 'status' + (kind ? ' ' + kind : '');
+  const span = $(textId);
+  if (span) span.textContent = text;
+}
+
+function setStatus(text, kind) { setStatusTo('status', 'statusText', text, kind); }
+
+function showResult(result) {
+  const out = $('output');
+  out.textContent = result;
+  out.classList.remove('empty');
+}
+
+function previewText(text, n) {
+  const t = (text || '').trim().replace(/\s+/g, ' ');
+  return t ? t.slice(0, n || 120) : '(空)';
+}
+
+function processText(raw, label) {
+  try {
+    const text = xmlToText(raw);
+    const result = parseBom(text);
+
+    showResult(result);
+
+    const hasData = lastParsed.rows.length > 0 || lastParsed.model || lastParsed.sku;
+    if (!hasData) {
+      /* 通了但没解析出内容：把返回内容前一段显出来，便于判断是接口没数据还是格式变了 */
+      clearEvPanes();
+      setStatus('已收到返回，但没解析到数据。返回内容前 120 字符：' + previewText(text, 120), 'warn');
+      return;
+    }
+
+    /* 解析成功后自动用前两个 PPID 搜索 Everything */
+    runEverythingPanes(lastParsed.rows.map(r => r.ppid).filter(v => v));
+    setStatus('查询完成' + (label ? ' · ' + label : ''), 'success');
+  } catch (e) {
+    lastParsed = null;
+    clearEvPanes();
+    setStatus('解析失败：' + e.message + '（原始内容前 120 字符：' + previewText(xmlToText(raw), 120) + '）', 'error');
+  }
+}
+
+async function handleScan() {
+  const input = $('snInput');
+  if (!input) return;
+  let sn = input.value.trim();
+  if (!sn) return;
+  input.value = '';
+  sn = sn.split('_')[0];
+  if (sn.length <= 10) {
+    setStatus('SN 长度不足（需大于 10 位）：' + sn, 'warn');
+    input.focus();
+    return;
+  }
+
+  setStatus('查询中… ' + sn, 'loading');
+  const btn = $('btnQuery');
+  btn.disabled = true;
+  try {
+    const raw = await fetchBomText(sn, getConfig());
+    processText(raw, 'SN: ' + sn);
+  } catch (e) {
+    const msg = e.name === 'AbortError' ? '请求超时（10s）' : e.message;
+    const tip = /Failed to fetch|NetworkError|Load failed/i.test(msg)
+      ? '（' + corsHint(getConfig().url) + '）'
+      : '，请检查网络或接口地址';
+    setStatus('请求失败：' + msg + tip, 'error');
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+/* ---------- 配置 ---------- */
+/* 通过 http(s) 打开（同源转发服务 / 服务器部署）时，默认走同源转发路径 /fmdi 与 /everything；
+   本地 file:// 打开时，默认直连接口地址 */
+function defaultApiUrl() {
+  return /^https?:$/.test(location.protocol) ? '/fmdi' : DEFAULTS.url;
+}
+
+/* Everything 的 HTTP 服务不返回 CORS 响应头，直连必被浏览器同源策略拦截，
+   所以页面通过 http(s) 打开时默认走同源转发路径，由转发服务代加 Basic 认证 */
+function defaultEvUrl() {
+  return /^https?:$/.test(location.protocol) ? '/everything' : DEFAULTS.evUrl;
+}
+
+function defaultConfig() {
+  return Object.assign({}, DEFAULTS, { url: defaultApiUrl(), evUrl: defaultEvUrl() });
+}
+
+/* 旧版本把接口地址存成 ./fmdi.ashx（放在页面目录里的转发文件），该方案已弃用，
+   这里自动迁移到同源转发路径 /fmdi，避免老配置一直报「被当成静态文件返回」 */
+function migrateApiUrl(u) {
+  const s = (u || '').trim();
+  if (!s) return s;
+  if (/^\.?\.?\/?(fmdi\.ashx)$/i.test(s) || /\/fmdi\.ashx$/i.test(s)) return '/fmdi';
+  return s;
+}
+
+/* 老配置里 Everything 存的是直连地址，代理场景下必被同源策略拦截，
+   自动改成同源转发路径 /everything */
+function migrateEvUrl(u) {
+  const s = (u || '').trim();
+  if (!s) return s;
+  if (/^https?:\/\/192\.188\.0\.240:2016\/?$/i.test(s)) return '/everything';
+  return s;
+}
+
+function getConfig() {
+  const cfg = defaultConfig();
+  try {
+    const saved = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+    Object.keys(DEFAULTS).forEach(k => {
+      if (typeof saved[k] === 'string' && saved[k].length) cfg[k] = saved[k];
+    });
+  } catch (e) { /* 忽略损坏的本地配置 */ }
+  const beforeUrl = cfg.url;
+  const beforeEv = cfg.evUrl;
+  cfg.url = migrateApiUrl(cfg.url);
+  cfg.evUrl = migrateEvUrl(cfg.evUrl);
+  if (cfg.url !== beforeUrl || cfg.evUrl !== beforeEv) {
+    try { localStorage.setItem(CFG_KEY, JSON.stringify(Object.assign({}, cfg))); } catch (e) { /* 忽略写入失败 */ }
+  }
+  return cfg;
+}
+
+/* 地址支持相对路径写法（/fmdi/、/everything/），其余自动补 http:// */
+function normalizeEndpoint(v) {
+  const s = (v || '').trim();
+  if (!s) return s;
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) return s;                      // 已带协议
+  if (s[0] === '/' || s.startsWith('./') || s.startsWith('../')) return s; // 同源相对路径
+  return 'http://' + s;
+}
+
+function endpointHint(u) {
+  return /^https?:\/\//i.test(u) ? u.replace(/^https?:\/\//i, '').split('/')[0] : (u || '');
+}
+
+function fillConfigForm(cfg) {
+  $('cfgUrl').value = cfg.url;
+  $('cfgCustomer').value = cfg.customer;
+  $('cfgGroup').value = cfg.group;
+  $('cfgLine').value = cfg.line;
+  $('cfgSite').value = cfg.site;
+  $('cfgIntl').value = cfg.intl;
+  $('cfgEvUrl').value = cfg.evUrl;
+  $('cfgEvUser').value = cfg.evUser;
+  $('cfgEvPass').value = cfg.evPass;
+  $('cfgEvCount').value = cfg.evCount;
+  if ($('urlHint')) $('urlHint').textContent = endpointHint(cfg.url);
+  if ($('evUrlHint')) $('evUrlHint').textContent = endpointHint(cfg.evUrl);
+  if ($('envTag')) $('envTag').textContent = cfg.site + ' / ' + cfg.line;
+}
+
+function readConfigForm() {
+  return {
+    url: $('cfgUrl').value.trim(),
+    customer: $('cfgCustomer').value.trim(),
+    group: $('cfgGroup').value.trim(),
+    line: $('cfgLine').value.trim(),
+    site: $('cfgSite').value.trim(),
+    intl: $('cfgIntl').value.trim(),
+    evUrl: $('cfgEvUrl').value.trim(),
+    evUser: $('cfgEvUser').value.trim(),
+    evPass: $('cfgEvPass').value.trim(),
+    evCount: $('cfgEvCount').value.trim() || DEFAULTS.evCount
+  };
+}
+
+function flashEl(elId, text) {
+  const el = $(elId);
+  if (!el) return;
+  el.textContent = text;
+  setTimeout(() => { if (el.textContent === text) el.textContent = ''; }, 2200);
+}
+
+function saveConfig(cfg, msgId, msg) {
+  const merged = Object.assign(getConfig(), cfg);
+  localStorage.setItem(CFG_KEY, JSON.stringify(merged));
+  fillConfigForm(merged);
+  flashEl(msgId, msg);
+}
+
+/* ---------- 初始化 ---------- */
+function init() {
+  const input = $('snInput');
+  if (!input) return;
+
+  fillConfigForm(getConfig());
+  input.focus();
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); handleScan(); }
+  });
+  $('btnQuery').addEventListener('click', handleScan);
+
+  $('btnSaveCfg').addEventListener('click', () => {
+    const cfg = readConfigForm();
+    if (!cfg.url) { flashEl('cfgMsg', 'URL 不能为空'); return; }
+    cfg.url = normalizeEndpoint(cfg.url);
+    cfg.evUrl = normalizeEndpoint(cfg.evUrl);
+    saveConfig(cfg, 'cfgMsg', '已保存');
+  });
+
+  $('btnResetCfg').addEventListener('click', () => {
+    localStorage.removeItem(CFG_KEY);
+    fillConfigForm(defaultConfig());
+    flashEl('cfgMsg', '已恢复默认');
+  });
+
+  $('btnSaveEv').addEventListener('click', () => {
+    const cur = readConfigForm();
+    const ev = {
+      evUrl: cur.evUrl,
+      evUser: cur.evUser,
+      evPass: cur.evPass,
+      evCount: cur.evCount
+    };
+    if (!ev.evUrl) { flashEl('evCfgMsg', '地址不能为空'); return; }
+    ev.evUrl = normalizeEndpoint(ev.evUrl);
+    saveConfig(ev, 'evCfgMsg', '已保存');
+  });
+
+  $('btnResetEv').addEventListener('click', () => {
+    const reset = {};
+    EV_KEYS.forEach(k => { reset[k] = DEFAULTS[k]; });
+    saveConfig(reset, 'evCfgMsg', '已恢复默认');
+  });
+
+  window.addEventListener('focus', () => input.focus());
+}
+
+init();
+</script>
 </body>
 </html>

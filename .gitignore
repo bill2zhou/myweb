@@ -25,3 +25,8 @@ Thumbs.db
 
 # 系统文件
 .DS_Store
+
+# 「测试资料查询」同源转发代理的打包产物（由 search/web-proxy/build-exe.js 生成，约 88 MB）；
+# 源码 proxy.js / build-exe.js 仍进版本库，需要 exe 时本机执行 node build-exe.js 即可
+search/web-proxy/dist/
+search/web-proxy/.cache/
