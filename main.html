@@ -146,20 +146,20 @@
     box-shadow: 0 2px 10px rgba(16, 57, 95, .12); overflow: hidden;
   }
   .te-viewer-bar {
-    flex: 0 0 44px; display: flex; align-items: center; padding: 0 8px 0 14px;
+    flex: 0 0 26px; display: flex; align-items: center; padding: 0 6px 0 12px;
     background: #eef4fa; border-bottom: 1px solid #dce6f1;
   }
   .te-viewer-bar .te-viewer-title {
-    flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 600; color: #1f3a55;
+    flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1; font-weight: 600; color: #1f3a55;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .te-viewer-bar .te-viewer-title small {
-    margin-left: 8px; font-weight: 400; font-size: 12px; color: #8fa3b8;
+    margin-left: 6px; font-weight: 400; font-size: 11px; color: #8fa3b8;
   }
   .te-viewer-bar .te-viewer-tools { flex: 0 0 auto; display: flex; align-items: center; }
   .te-viewer-bar .te-tool {
-    width: 30px; height: 30px; margin-left: 3px; line-height: 30px; text-align: center;
-    border-radius: 6px; color: #4a6785; cursor: pointer; font-size: 15px; text-decoration: none;
+    width: 24px; height: 22px; margin-left: 2px; line-height: 22px; text-align: center;
+    border-radius: 5px; color: #4a6785; cursor: pointer; font-size: 13px; text-decoration: none;
   }
   .te-viewer-bar .te-tool:hover { background: #dbe8f5; color: var(--te-accent); }
   .te-viewer-body { position: relative; flex: 1 1 auto; min-height: 0; background: #fff; }
@@ -545,8 +545,7 @@
             <dd><a href="javascript:;" class="te-side-link" data-te-url="stop" onclick="return stop()"><i class="layui-icon layui-icon-pause"></i> 停机率</a></dd>
             <dd><a href="javascript:;" class="te-side-link" data-te-url="checklist" onclick="return checklist()"><i class="layui-icon layui-icon-form"></i> 點檢表</a></dd>
             <dd><a href="javascript:;" class="te-side-link" data-te-url="../handover/ate.html" onclick="return teOpenInPanel('../handover/ate.html','交接')"><i class="layui-icon layui-icon-transfer"></i> 交接</a></dd>
-            <dd><a href="javascript:;" class="te-side-link" data-te-url="../search/index.html" onclick="return teOpenInPanel('../search/index.html','查找')"><i class="layui-icon layui-icon-search"></i> 查找</a></dd>
-            <dd><a href="javascript:;" class="te-side-link" data-te-url="dataserach" onclick="return dataserach()"><i class="layui-icon layui-icon-engine"></i> 測試資料查詢</a></dd>
+            <dd><a href="javascript:;" class="te-side-link" data-te-url="../search/index.html" onclick="return teOpenInPanel('../search/index.html','測試資料查詢')"><i class="layui-icon layui-icon-search"></i> 測試資料查詢</a></dd>           
           </dl>
         </li>
         <li class="layui-nav-item">

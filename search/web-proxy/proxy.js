@@ -19,6 +19,7 @@
  * 路由规则：
  *   /fmdi?...        → http://192.188.0.13:9092/FMDI/SMT/FTSTDCHECK.ashx?...   （带 User-Agent: FMDICLIENT）
  *   /everything?...  → http://192.188.0.240:2016/...                          （由本服务带 Basic 认证）
+ *   /file?path=...   → 读取本机/共享路径上的文件并回传（供页面弹窗预览 txt / webp）
  *   其它路径          → 返回本目录下的静态文件（默认 index.html / search.html）
  */
 
@@ -57,6 +58,18 @@ const CONFIG = {
     user: process.env.EVERYTHING_USER === undefined ? 'engineer' : process.env.EVERYTHING_USER,
     pass: process.env.EVERYTHING_PASS === undefined ? 'engineer' : process.env.EVERYTHING_PASS,
     timeout: 15000
+  },
+
+  /* 文件内容预览：浏览器不能直读 D:\… 或 \\共享\… 这类路径，
+     由本服务按完整路径读取后回传。只允许下面白名单里的扩展名，防止被当成任意文件下载器 */
+  file: {
+    prefix: process.env.FILE_PREFIX || '/file',
+    maxTextBytes: Number(process.env.FILE_MAX_TEXT) || 8 * 1024 * 1024,
+    maxImageBytes: Number(process.env.FILE_MAX_IMAGE) || 40 * 1024 * 1024,
+    textExts: ['.txt', '.log', '.csv', '.json', '.xml', '.ini', '.md', '.text',
+               '.cfg', '.conf', '.yml', '.yaml', '.sql', '.dat', '.htm', '.html',
+               '.bat', '.ps1', '.js', '.css'],
+    imageExts: ['.webp', '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.avif']
   }
 };
 /* ================================================================ */
@@ -70,6 +83,12 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
   '.ico': 'image/x-icon',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.bmp': 'image/bmp',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.svg': 'image/svg+xml'
 };
 
@@ -162,6 +181,91 @@ function serveStatic(req, res, pathname) {
   res.end('未找到文件: ' + rel);
 }
 
+/* ---------- 文件预览：/file?path=<完整路径> ---------- */
+function fail(res, code, msg) {
+  res.writeHead(code, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
+  res.end(msg);
+}
+
+/* 文本编码：UTF-8 优先，不是合法 UTF-8 就按 GBK/GB18030 解码（现场 txt 多为 GBK） */
+function decodeText(buf) {
+  let b = buf;
+  if (b.length > 3 && b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF) b = b.subarray(3);
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(b);
+  } catch (e) { /* 不是 UTF-8 */ }
+  try {
+    return new TextDecoder('gb18030').decode(b);
+  } catch (e) { /* 运行时没有 GBK 支持（非 full-icu） */ }
+  return b.toString('utf8');
+}
+
+/* 只接受绝对路径：Windows 盘符 / UNC 共享，其它平台 / 开头 */
+function resolveTargetPath(raw) {
+  const s = String(raw || '').trim();
+  if (!s || s.indexOf('\0') !== -1) return null;
+  if (process.platform === 'win32') {
+    if (/^[a-z]:[\\/]/i.test(s) || /^\\\\[^\\]/.test(s)) return path.win32.normalize(s);
+    return null;
+  }
+  return s[0] === '/' ? path.normalize(s) : null;
+}
+
+function serveFilePreview(req, res, url) {
+  const raw = url.searchParams.get('path') || '';
+  const target = resolveTargetPath(raw);
+  if (!target) {
+    return fail(res, 400, '缺少 path 参数或不是绝对路径（需形如 D:\\资料\\a.txt 或 \\\\server\\share\\a.txt）');
+  }
+
+  let st;
+  try {
+    st = fs.statSync(target);
+  } catch (e) {
+    return fail(res, 404, '文件不存在或无权访问：' + target);
+  }
+  if (st.isDirectory()) return fail(res, 400, '目标是文件夹，无法预览：' + target);
+
+  const ext = path.extname(target).toLowerCase();
+  log('preview', target);
+
+  if (CONFIG.file.textExts.indexOf(ext) !== -1) {
+    if (st.size > CONFIG.file.maxTextBytes) {
+      return fail(res, 413, '文件过大（' + st.size + ' 字节，上限 ' + CONFIG.file.maxTextBytes + '）：' + target);
+    }
+    let buf;
+    try {
+      buf = fs.readFileSync(target);
+    } catch (e) {
+      return fail(res, 500, '读取失败：' + e.message);
+    }
+    const body = Buffer.from(decodeText(buf), 'utf8');
+    res.writeHead(200, {
+      'content-type': 'text/plain; charset=utf-8',
+      'content-length': body.length,
+      'cache-control': 'no-store',
+      'access-control-allow-origin': '*'
+    });
+    return res.end(body);
+  }
+
+  if (CONFIG.file.imageExts.indexOf(ext) !== -1) {
+    if (st.size > CONFIG.file.maxImageBytes) {
+      return fail(res, 413, '图片过大（' + st.size + ' 字节，上限 ' + CONFIG.file.maxImageBytes + '）：' + target);
+    }
+    res.writeHead(200, {
+      'content-type': MIME[ext] || 'application/octet-stream',
+      'content-length': st.size,
+      'cache-control': 'no-store',
+      'access-control-allow-origin': '*'
+    });
+    fs.createReadStream(target).on('error', () => res.end()).pipe(res);
+    return;
+  }
+
+  return fail(res, 415, '该类型不支持预览（仅 ' + CONFIG.file.textExts.concat(CONFIG.file.imageExts).join(' ') + '）：' + target);
+}
+
 /* ---------- 转发 ---------- */
 function proxy(req, res, rule) {
   const incoming = new URL(req.url, 'http://localhost');
@@ -243,6 +347,9 @@ const server = http.createServer((req, res) => {
   if (isEverythingPath(pathname)) {
     return proxy(req, res, CONFIG.everything);
   }
+  if (pathname === CONFIG.file.prefix || pathname.startsWith(CONFIG.file.prefix + '/')) {
+    return serveFilePreview(req, res, new URL(req.url, 'http://localhost'));
+  }
   serveStatic(req, res, pathname);
 });
 
@@ -280,6 +387,7 @@ server.listen(port, () => {
   console.log('  FMDI 转发: ' + CONFIG.fmdi.prefix + '  ->  ' + CONFIG.fmdi.target);
   console.log('  Everything: ' + CONFIG.everything.prefix + '  ->  ' + CONFIG.everything.target
     + (CONFIG.everything.user ? '（服务端代加 Basic 认证）' : ''));
+  console.log('  文件预览:   ' + CONFIG.file.prefix + '?path=<完整路径>  ->  本机/共享文件（txt、webp 等）');
   console.log('  页面里接口地址填 ' + CONFIG.fmdi.prefix + '，Everything 地址填 ' + CONFIG.everything.prefix);
   console.log('按 Ctrl+C 结束');
   if (autoOpen) openBrowser(localUrl);

@@ -179,6 +179,55 @@
     .ev-list{min-height:110px;max-height:32vh;}
     .ev-pane{padding:8px 10px;}
   }
+  /* ---------- 文件预览弹窗 ---------- */
+  .modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal[hidden]{display:none;}
+  .modal-backdrop{position:absolute;inset:0;background:rgba(4,8,16,.74);animation:fadeIn .14s ease-out;}
+  .modal-panel{
+    position:relative;width:100%;max-width:960px;max-height:90vh;
+    display:flex;flex-direction:column;
+    background:linear-gradient(180deg,var(--card),var(--card-2));
+    border:1px solid var(--border);border-radius:16px;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.95);
+    animation:popIn .16s ease-out;
+  }
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.99);}to{opacity:1;transform:none;}}
+  .modal-head{display:flex;align-items:flex-start;gap:12px;padding:13px 16px 10px;border-bottom:1px solid var(--border-soft);}
+  .modal-head-text{min-width:0;flex:1 1 auto;}
+  .modal-title{font-size:14.5px;font-weight:600;word-break:break-all;}
+  .modal-path{font:11.5px/1.5 var(--mono);color:var(--muted);word-break:break-all;margin-top:3px;}
+  .modal-tools{display:flex;gap:8px;flex:0 0 auto;}
+  .modal-tools button{font-size:12px;padding:7px 11px;}
+  #fmStatus{margin:9px 16px 0;flex:0 0 auto;}
+  .modal-body{padding:10px 16px 16px;overflow:auto;min-height:120px;flex:1 1 auto;}
+  .fm-text{
+    margin:0;padding:11px 13px;border-radius:10px;
+    background:#080d1a;border:1px solid var(--border-soft);
+    font:12.5px/1.6 var(--mono);color:#d7e5ff;
+    white-space:pre-wrap;word-break:break-word;
+  }
+  /* 图片预览：固定视口 + 滚轮缩放 / 左键拖动 / 旋转；打开时图片居中显示 */
+  .fm-img-wrap{
+    position:relative;display:flex;align-items:center;justify-content:center;
+    height:62vh;min-height:240px;padding:8px;border-radius:10px;
+    border:1px solid var(--border-soft);overflow:hidden;
+    background:repeating-conic-gradient(#0d1526 0% 25%,#0a1120 0% 50%) 50%/18px 18px;
+    cursor:grab;user-select:none;touch-action:none;
+  }
+  .fm-img-wrap.dragging{cursor:grabbing;}
+  .fm-img{
+    display:block;border-radius:6px;flex:0 0 auto;   /* 不被 flex 压缩，缩放后尺寸才真实 */
+    transform-origin:center center;will-change:transform;
+  }
+  .fm-view-tip{
+    position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+    font-size:11.5px;color:#8a97b8;background:rgba(8,13,26,.72);
+    padding:3px 10px;border-radius:999px;white-space:nowrap;
+    pointer-events:none;
+  }
+  .fm-tip{font-size:12.5px;color:var(--muted);line-height:1.75;}
+
   code{background:rgba(255,255,255,.06);border-radius:5px;padding:1px 5px;font-family:var(--mono);font-size:11.5px;}
 </style>
 </head>
@@ -278,6 +327,10 @@ SN_PPID_MAC
         <div class="field"><label for="cfgEvUser">用户名</label><input id="cfgEvUser" type="text" spellcheck="false"></div>
         <div class="field"><label for="cfgEvPass">密码</label><input id="cfgEvPass" type="text" spellcheck="false"></div>
         <div class="field"><label for="cfgEvCount">最多显示条数</label><input id="cfgEvCount" type="text"></div>
+        <div class="field wide">
+          <label for="cfgFileUrl">文件预览地址（可填同源转发 /file）</label>
+          <input id="cfgFileUrl" type="text" spellcheck="false">
+        </div>
       </div>
       <div class="actions">
         <button id="btnSaveEv" class="primary">保存设置</button>
@@ -306,13 +359,43 @@ SN_PPID_MAC
         经 http(s) 打开页面时默认就是该地址——Everything 的 HTTP 服务不返回 CORS 响应头，
         直连 <code>http://192.188.0.240:2016</code> 必被浏览器拦截；<br>
         Everything 搜索：每次查询成功后，自动取回传里的前两个 PPID，分别调用 Everything HTTP 服务（默认 <code>http://192.188.0.240:2016</code>，账号 <code>engineer</code>）
-        搜索并显示在两个并排窗口里，每条结果显示文件名、完整路径、大小与修改时间，点条目可复制完整路径。
+        搜索并显示在两个并排窗口里，每条结果显示文件名、完整路径、大小与修改时间。<br>
+        <b>文件预览</b>：点击条目弹出窗口显示文件内容 —— <code>.txt</code> 按文本显示（UTF-8 优先，非 UTF-8 自动按 GBK/GB18030 解码），
+        <code>.webp</code> 等图片按图片显示（打开时居中，按原始像素渲染，清晰度与看图软件一致），支持<b>滚轮缩放</b>（以光标为中心）、<b>左键按住拖动</b>平移、
+        「旋转」每次顺时针 90°、「还原」恢复适应窗口大小/角度/位置（也可双击图片还原）；
+        弹窗内可「复制路径」或「新窗口打开」，按 <code>Esc</code> 或点遮罩关闭。
+        浏览器不能直接读 <code>D:\…</code>、<code>H:\…</code> 或 <code>\\共享\…</code> 这类路径，所以内容由服务端读取：
+        Everything 设置里的「文件预览地址」填 <code>/file</code>，由站点的 <code>server/routes/preview.js</code>（或独立运行时的 <code>web-proxy/proxy.js</code>）
+        提供 <code>/file?path=完整路径</code> 接口。服务所在机器必须能访问这些路径（映射盘、共享都要有权限），
+        否则会提示「文件不存在或无权访问」；旧版服务/代理不含该接口时，需重新打包。
         大小字段兼容 <code>size</code> / <code>file_size</code> / <code>length</code> 等命名及数字、数字字符串、可读文本三种类型；
         若显示为「大小 —」，状态行会给出服务端实际返回的字段名，悬停条目可看到原始 JSON。
       </div>
     </div>
   </details>
 
+</div>
+
+<!-- 文件内容预览弹窗（txt 文本 / webp 等图片） -->
+<div class="modal" id="fileModal" hidden>
+  <div class="modal-backdrop" data-close="1"></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="fmTitle">
+    <div class="modal-head">
+      <div class="modal-head-text">
+        <div class="modal-title" id="fmTitle">—</div>
+        <div class="modal-path" id="fmPath"></div>
+      </div>
+      <div class="modal-tools">
+        <button id="fmRotate" class="ghost" type="button" title="顺时针旋转 90°" hidden>旋转</button>
+        <button id="fmReset" class="ghost" type="button" title="恢复适应窗口大小与角度" hidden>还原</button>
+        <button id="fmCopy" class="ghost" type="button">复制路径</button>
+        <button id="fmOpen" class="ghost" type="button">新窗口打开</button>
+        <button id="fmClose" class="ghost" type="button" title="关闭（Esc）">✕</button>
+      </div>
+    </div>
+    <div class="status" id="fmStatus"><span class="dot"></span><span id="fmStatusText">加载中…</span></div>
+    <div class="modal-body" id="fmBody"></div>
+  </div>
 </div>
 
 <script>
@@ -329,9 +412,10 @@ const DEFAULTS = {
   evUrl: 'http://192.188.0.240:2016',
   evUser: 'engineer',
   evPass: 'engineer',
-  evCount: '50'
+  evCount: '50',
+  fileUrl: '/file'
 };
-const EV_KEYS = ['evUrl', 'evUser', 'evPass', 'evCount'];
+const EV_KEYS = ['evUrl', 'evUser', 'evPass', 'evCount', 'fileUrl'];
 const CFG_KEY = 'fmdi_bom_config';
 
 const PATTERNS = {
@@ -405,13 +489,36 @@ function parseBom(text) {
   const head8 = s => (s.length >= 9 ? s.substring(1, 9) : s);
   let stationCheck = '';
 
-  /* 按 SNMACMULTI 的配对顺序，与 SSNMULTI / GROUPMULTI 按位对齐（同一条 SN 可重复，不能用键查表） */
+  /* ---------- 按 SN 关联 PPID / 站别 ----------
+     FMDI 的 SNMULTI、SSNMULTI、GROUPMULTI 三组是按 SN 一一对应的（Getbom.cs 里建成
+     barPpids / barStations 两个“SN → 值”字典，再按 SN 去取），而 SNMACMULTI 里的
+     SN 顺序和它们不一定相同，所以不能像原来那样按下标硬对，否则 PPID 会张冠李戴。
+     同一条 SN 允许重复出现：同 SN 的值按出现先后排成队列，取一条删一条；
+     SN 完全对不上时（例如两边格式不一致）才退回按下标取，保证不至于整列空白。 */
+  const indexMap = arr => {
+    const map = new Map();
+    snArr.forEach((sn, i) => {
+      if (!sn) return;
+      if (!map.has(sn)) map.set(sn, []);
+      map.get(sn).push(arr[i] === undefined ? '' : arr[i]);
+    });
+    return map;
+  };
+  const takeBySn = (map, sn, i, arr) => {
+    const queue = map.get(sn);
+    if (queue && queue.length) return queue.shift();
+    return arr[i] === undefined ? '' : arr[i];
+  };
+
+  const ppidMap = isppid ? indexMap(ppidArr) : new Map();
+  const stationMap = stationArr.length ? indexMap(stationArr) : new Map();
+
   const rows = [];   // 每条板卡记录，供界面上方的 PPID 按钮使用
   pairs.forEach((pair, i) => {
     const key = pair[0];
     const mac = pair[1];
-    const ppid = isppid ? (ppidArr[i] || '') : '';
-    const sta  = stationArr[i] || '';
+    const ppid = isppid ? takeBySn(ppidMap, key, i, ppidArr) : '';
+    const sta = takeBySn(stationMap, key, i, stationArr);
     const isMain = (sn1 === key) || (head8(sn1) === head8(key));
     const line = isppid ? key + '_' + ppid + '_' + mac : key + '__' + mac;
     if (isMain) boards.push(line); else subBoards.push(line);
@@ -597,6 +704,280 @@ function timeTextOf(obj) {
   return typeof v === 'string' && v ? '修改 ' + v : '';
 }
 
+/* ---------- 文件预览弹窗：txt 直接显示文本，webp 等图片直接显示图片 ---------- */
+const TEXT_EXTS = ['txt', 'log', 'csv', 'json', 'xml', 'ini', 'md', 'text', 'cfg', 'conf',
+                   'yml', 'yaml', 'sql', 'dat', 'htm', 'html', 'bat', 'ps1', 'js', 'css'];
+const IMG_EXTS  = ['webp', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'ico', 'avif'];
+const PREVIEW_HINT = '预览需要同源转发服务：请用 web-proxy 打开本页（Everything 设置 → 文件预览地址填 /file）';
+
+let fmPath = '';    // 当前预览的完整路径
+let fmImg = null;   // 当前图片节点，关闭时释放
+let fmView = null;  // 当前图片视图状态 { scale, tx, ty, rot, apply }
+
+function fileNameOf(p) {
+  const s = String(p || '');
+  const i = Math.max(s.lastIndexOf('\\'), s.lastIndexOf('/'));
+  return i === -1 ? s : s.slice(i + 1);
+}
+
+function extOf(p) {
+  const name = fileNameOf(p);
+  const i = name.lastIndexOf('.');
+  return i === -1 ? '' : name.slice(i + 1).toLowerCase();
+}
+
+function previewUrl(p) {
+  const base = (getConfig().fileUrl || '').trim();
+  if (!base) return '';
+  return base + (base.indexOf('?') === -1 ? '?' : '&') + 'path=' + encodeURIComponent(p);
+}
+
+function fmSetStatus(text, kind) { setStatusTo('fmStatus', 'fmStatusText', text, kind); }
+
+/* 图片工具按钮只对图片显示 */
+function fmShowImgTools(on) {
+  ['fmRotate', 'fmReset'].forEach(id => {
+    const b = $(id);
+    if (b) b.hidden = !on;
+  });
+}
+
+/* 图片视图：滚轮缩放（以光标为中心）、左键拖动、旋转、还原；初始居中 */
+function fmBindImageViewer(wrap, img) {
+  const view = { scale: 1, tx: 0, ty: 0, rot: 0, natW: 1, natH: 1 };
+
+  /* 缩放用“原始像素 × 比例”直接改布局宽高，而不是 transform:scale 放大；
+     浏览器每次都会按目标尺寸重新采样，放大后和直接用看图软件打开一样清晰 */
+  view.apply = () => {
+    img.style.width = (view.natW * view.scale) + 'px';
+    img.style.height = (view.natH * view.scale) + 'px';
+    img.style.transform = 'translate(' + view.tx + 'px,' + view.ty + 'px) rotate(' + view.rot + 'deg)';
+  };
+
+  /* 适应视口的缩放比例：大图缩到整张可见，小图保持 1:1 */
+  view.fitScale = () => {
+    const r = wrap.getBoundingClientRect();
+    const availW = Math.max(1, r.width - 16);
+    const availH = Math.max(1, r.height - 16);
+    const vertical = view.rot % 180 !== 0;
+    const boxW = vertical ? view.natH : view.natW;
+    const boxH = vertical ? view.natW : view.natH;
+    return Math.min(1, availW / boxW, availH / boxH);
+  };
+
+  fmView = view;
+
+  const initWithNaturalSize = () => {
+    if (fmView !== view) return;
+    view.natW = img.naturalWidth || 1;
+    view.natH = img.naturalHeight || 1;
+    view.scale = view.fitScale();
+    view.tx = 0;
+    view.ty = 0;
+    view.apply();
+  };
+  if (img.complete && img.naturalWidth) initWithNaturalSize();
+  else img.addEventListener('load', initWithNaturalSize, { once: true });
+
+  const tip = () => '图片 ' + img.naturalWidth + ' × ' + img.naturalHeight +
+    ' · 缩放 ' + Math.round(view.scale * 100) + '% · 旋转 ' + view.rot + '°';
+
+  wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const next = Math.min(8, Math.max(0.2, view.scale * Math.exp(-e.deltaY * 0.0015)));
+    const k = next / view.scale;
+    /* 让光标下的那一点保持不动：t' = (1-k)·(P-C) + k·t */
+    const px = e.clientX - (rect.left + rect.width / 2);
+    const py = e.clientY - (rect.top + rect.height / 2);
+    view.tx = (1 - k) * px + k * view.tx;
+    view.ty = (1 - k) * py + k * view.ty;
+    view.scale = next;
+    view.apply();
+    fmSetStatus(tip() + ' · 滚轮缩放 / 左键拖动 / 双击还原', 'success');
+  }, { passive: false });
+
+  /* 左键拖动平移 */
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+  wrap.addEventListener('contextmenu', e => e.preventDefault());
+  wrap.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;   // 仅左键拖动
+    dragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    wrap.classList.add('dragging');
+    try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* 忽略 */ }
+  });
+  wrap.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    view.tx += e.clientX - lastX;
+    view.ty += e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    view.apply();
+  });
+  const endDrag = e => {
+    if (!dragging) return;
+    dragging = false;
+    wrap.classList.remove('dragging');
+    try { wrap.releasePointerCapture(e.pointerId); } catch (err) { /* 忽略 */ }
+  };
+  wrap.addEventListener('pointerup', endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+  wrap.addEventListener('dblclick', () => fmResetImgView());
+}
+
+function fmApplyView() {
+  if (fmView && typeof fmView.apply === 'function') fmView.apply();
+}
+
+function fmRotateImg(deg) {
+  if (!fmView || !fmImg) return;
+  fmView.rot = (fmView.rot + (deg || 90) + 360) % 360;
+
+  /* 转成竖/横后重新按可用区域缩放到可见大小，避免一转就只剩一角 */
+  fmView.scale = fmView.fitScale();
+  fmView.tx = 0;
+  fmView.ty = 0;
+
+  fmApplyView();
+  fmSetStatus('已旋转 ' + fmView.rot + '°（点「还原」恢复原始角度）', 'success');
+}
+
+function fmResetImgView() {
+  if (!fmView) return;
+  fmView.scale = fmView.fitScale();
+  fmView.tx = 0;
+  fmView.ty = 0;
+  fmView.rot = 0;
+  fmApplyView();
+  fmSetStatus('已还原：适应窗口大小、角度与位置', 'success');
+}
+
+function closeFilePreview() {
+  const modal = $('fileModal');
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  const body = $('fmBody');
+  if (body) body.innerHTML = '';
+  if (fmImg && fmImg.parentNode) fmImg.parentNode.innerHTML = '';
+  fmImg = null;
+  fmView = null;
+  document.body.style.overflow = '';
+}
+
+async function openFilePreview(full) {
+  const pathStr = String(full || '').trim();
+  const modal = $('fileModal');
+  if (!modal || !pathStr) return;
+
+  fmPath = pathStr;
+  $('fmTitle').textContent = fileNameOf(pathStr) || pathStr;
+  $('fmPath').textContent = pathStr;
+  $('fmBody').innerHTML = '';
+  fmImg = null;
+  fmView = null;
+  fmShowImgTools(false);
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  try { $('fmClose').focus(); } catch (e) { /* 忽略 */ }
+
+  const url = previewUrl(pathStr);
+  if (!url) {
+    fmSetStatus('未配置「文件预览地址」，无法读取文件内容。' + PREVIEW_HINT, 'error');
+    return;
+  }
+
+  const ext = extOf(pathStr);
+  const isImg = IMG_EXTS.indexOf(ext) !== -1;
+  const isTxt = TEXT_EXTS.indexOf(ext) !== -1;
+
+  if (!isImg && !isTxt) {
+    fmSetStatus('暂不支持预览 .' + (ext || '无扩展名') + ' 类型（仅 txt / webp），可点「新窗口打开」查看', 'warn');
+    return;
+  }
+
+  fmSetStatus('正在读取…', 'loading');
+
+  if (isImg) {
+    const wrap = document.createElement('div');
+    wrap.className = 'fm-img-wrap';
+    const img = document.createElement('img');
+    img.className = 'fm-img';
+    img.alt = fileNameOf(pathStr);
+    img.draggable = false;
+    img.onload = () => {
+      if (fmPath !== pathStr) return;
+      fmSetStatus('图片 ' + img.naturalWidth + ' × ' + img.naturalHeight +
+        ' · 滚轮缩放 / 左键拖动 / 可旋转', 'success');
+    };
+    img.onerror = () => {
+      if (fmPath !== pathStr) return;
+      fmSetStatus('图片加载失败：文件可能不存在，或转发服务没有 /file 接口（请更新 proxy.js / 重新打包 exe）', 'error');
+    };
+    img.src = url;
+    fmImg = img;
+    wrap.appendChild(img);
+
+    const tip = document.createElement('div');
+    tip.className = 'fm-view-tip';
+    tip.textContent = '滚轮缩放 · 左键拖动 · 双击还原';
+    wrap.appendChild(tip);
+
+    $('fmBody').appendChild(wrap);
+    fmBindImageViewer(wrap, img);
+    fmShowImgTools(true);
+    return;
+  }
+
+  try {
+    const resp = await fetch(url, { cache: 'no-store' });
+    if (!resp.ok) {
+      const t = (await resp.text()).replace(/\s+/g, ' ').trim();
+      let msg;
+      if (resp.status === 404) {
+        /* 服务端自己给出的「文件不存在」原样显示，否则说明根本没有 /file 接口 */
+        msg = /文件不存在|无权访问/.test(t)
+          ? t.slice(0, 220)
+          : '服务端没有 /file 接口：请用新版 server / proxy.js（旧版 exe 需重新打包），或检查「文件预览地址」配置';
+      } else {
+        msg = 'HTTP ' + resp.status + (t ? '：' + t.slice(0, 180) : '');
+      }
+      throw new Error(msg);
+    }
+    const text = await resp.text();
+    if (fmPath !== pathStr) return;    // 等待期间已切到别的文件
+    const pre = document.createElement('pre');
+    pre.className = 'fm-text';
+    pre.textContent = text || '(空文件)';
+    $('fmBody').appendChild(pre);
+    const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
+    fmSetStatus('文本 ' + text.length + ' 字符 / ' + lines + ' 行 · ' + fileNameOf(pathStr), 'success');
+  } catch (e) {
+    if (fmPath !== pathStr) return;
+    const msg = e.message || String(e);
+    const tip = /Failed to fetch|NetworkError|Load failed/i.test(msg)
+      ? '（' + corsHint(getConfig().fileUrl) + '）' : '';
+    fmSetStatus('读取失败：' + msg + tip, 'error');
+  }
+}
+
+function fmCopyPath() {
+  if (!fmPath) return;
+  navigator.clipboard.writeText(fmPath).then(
+    () => fmSetStatus('已复制路径：' + fmPath, 'success'),
+    () => fmSetStatus('复制失败，请手动选择路径', 'warn')
+  );
+}
+
+function fmOpenInNewTab() {
+  const url = previewUrl(fmPath);
+  if (!url) { fmSetStatus('未配置「文件预览地址」，无法打开', 'error'); return; }
+  window.open(url, '_blank', 'noopener');
+}
+
 /* ---------- Everything 双窗口：分别显示前两个 PPID 的文件 ---------- */
 const EV_PANES = [
   { list: 'evList1', status: 'evStatus1', statusText: 'evStatusText1', ppid: 'evPpid1' },
@@ -646,16 +1027,24 @@ function renderEverythingList(idx, data, kw) {
     const raw = (r && typeof r === 'object') ? r : { name: String(r) };
     const nameKey = pickField(raw, ['name', 'filename', 'file_name']);
     const pathKey = pickField(raw, ['path', 'full_path', 'fullpath', 'location', 'directory']);
-    const full = (pathKey ? raw[pathKey] : '') || (nameKey ? raw[nameKey] : '') || JSON.stringify(raw);
-    li.title = '点击复制：' + full;
+    const nameVal = nameKey ? String(raw[nameKey] || '') : '';
+    const pathVal = pathKey ? String(raw[pathKey] || '') : '';
+
+    /* 有的版本 path 是完整路径，有的只给所在目录，这里补成完整路径 */
+    let full = pathVal || nameVal || JSON.stringify(raw);
+    if (pathVal && nameVal && fileNameOf(pathVal).toLowerCase() !== nameVal.toLowerCase()) {
+      full = pathVal + (/[\\/]$/.test(pathVal) ? '' : '\\') + nameVal;
+    }
+    const isFolder = String(pickField(raw, ['type']) ? raw[pickField(raw, ['type'])] : '').toLowerCase() === 'folder';
+    li.title = (isFolder ? '文件夹' : '点击预览内容') + '：' + full;
 
     const name = document.createElement('div');
     name.className = 'ev-name';
-    name.textContent = (nameKey ? raw[nameKey] : '') || full;
+    name.textContent = nameVal || full;
 
     const p = document.createElement('div');
     p.className = 'ev-path';
-    p.textContent = (pathKey && raw[pathKey] !== name.textContent) ? raw[pathKey] : '';
+    p.textContent = (pathVal && pathVal !== name.textContent) ? pathVal : '';
 
     const meta = document.createElement('div');
     meta.className = 'ev-meta';
@@ -666,11 +1055,11 @@ function renderEverythingList(idx, data, kw) {
     if (info.bytes !== null) size.title = info.bytes.toLocaleString() + ' 字节';
     else {
       sizeMissing++;
-      li.title = '点击复制：' + full + '\n服务端原始 JSON：' + JSON.stringify(raw);
+      li.title = '点击预览内容：' + full + '\n服务端原始 JSON：' + JSON.stringify(raw);
     }
     meta.appendChild(size);
 
-    if (String(pickField(raw, ['type']) ? raw[pickField(raw, ['type'])] : '').toLowerCase() === 'folder') {
+    if (isFolder) {
       meta.appendChild(document.createTextNode('文件夹  '));
     }
     const time = timeTextOf(raw);
@@ -680,13 +1069,12 @@ function renderEverythingList(idx, data, kw) {
     if (p.textContent) li.appendChild(p);
     li.appendChild(meta);
 
-    li.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(full);
-        evSetStatus(idx, '已复制：' + full, 'success');
-      } catch (e) {
-        evSetStatus(idx, '复制失败，请手动选择路径', 'warn');
+    li.addEventListener('click', () => {
+      if (isFolder) {
+        evSetStatus(idx, '该条目是文件夹，不能预览：' + full, 'warn');
+        return;
       }
+      openFilePreview(full);
     });
     list.appendChild(li);
 
@@ -697,7 +1085,7 @@ function renderEverythingList(idx, data, kw) {
     /* 全是「大小 —」时把服务端返回的字段名带出来，便于确认是字段名不同还是服务端未返回 */
     evSetStatus(idx, '共 ' + total + ' 条 · 返回字段：' + sampleKeys, 'warn');
   } else {
-    evSetStatus(idx, '共 ' + total + ' 条，显示前 ' + items.length + ' 条 · 点击复制路径', 'success');
+    evSetStatus(idx, '共 ' + total + ' 条，显示前 ' + items.length + ' 条 · 点击条目预览内容', 'success');
   }
 }
 
@@ -825,8 +1213,17 @@ function defaultEvUrl() {
   return /^https?:$/.test(location.protocol) ? '/everything' : DEFAULTS.evUrl;
 }
 
+/* 预览文件内容必须由转发服务代读（浏览器不能读本地/共享路径），同样只在 http(s) 下可用 */
+function defaultFileUrl() {
+  return /^https?:$/.test(location.protocol) ? DEFAULTS.fileUrl : '';
+}
+
 function defaultConfig() {
-  return Object.assign({}, DEFAULTS, { url: defaultApiUrl(), evUrl: defaultEvUrl() });
+  return Object.assign({}, DEFAULTS, {
+    url: defaultApiUrl(),
+    evUrl: defaultEvUrl(),
+    fileUrl: defaultFileUrl()
+  });
 }
 
 /* 旧版本把接口地址存成 ./fmdi.ashx（放在页面目录里的转发文件），该方案已弃用，
@@ -889,6 +1286,7 @@ function fillConfigForm(cfg) {
   $('cfgEvUser').value = cfg.evUser;
   $('cfgEvPass').value = cfg.evPass;
   $('cfgEvCount').value = cfg.evCount;
+  $('cfgFileUrl').value = cfg.fileUrl;
   if ($('urlHint')) $('urlHint').textContent = endpointHint(cfg.url);
   if ($('evUrlHint')) $('evUrlHint').textContent = endpointHint(cfg.evUrl);
   if ($('envTag')) $('envTag').textContent = cfg.site + ' / ' + cfg.line;
@@ -905,7 +1303,8 @@ function readConfigForm() {
     evUrl: $('cfgEvUrl').value.trim(),
     evUser: $('cfgEvUser').value.trim(),
     evPass: $('cfgEvPass').value.trim(),
-    evCount: $('cfgEvCount').value.trim() || DEFAULTS.evCount
+    evCount: $('cfgEvCount').value.trim() || DEFAULTS.evCount,
+    fileUrl: $('cfgFileUrl').value.trim()
   };
 }
 
@@ -966,10 +1365,29 @@ function init() {
   $('btnResetEv').addEventListener('click', () => {
     const reset = {};
     EV_KEYS.forEach(k => { reset[k] = DEFAULTS[k]; });
+    reset.fileUrl = defaultFileUrl();
     saveConfig(reset, 'evCfgMsg', '已恢复默认');
   });
 
-  window.addEventListener('focus', () => input.focus());
+  /* 文件预览弹窗 */
+  const modal = $('fileModal');
+  if (modal) {
+    $('fmClose').addEventListener('click', closeFilePreview);
+    $('fmCopy').addEventListener('click', fmCopyPath);
+    $('fmOpen').addEventListener('click', fmOpenInNewTab);
+    $('fmRotate').addEventListener('click', () => fmRotateImg(90));
+    $('fmReset').addEventListener('click', fmResetImgView);
+    modal.addEventListener('click', e => { if (e.target && e.target.dataset.close) closeFilePreview(); });
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeFilePreview();
+  });
+
+  /* 弹窗打开时不要把焦点抢回输入框 */
+  window.addEventListener('focus', () => {
+    if (modal && !modal.hidden) return;
+    input.focus();
+  });
 }
 
 init();
