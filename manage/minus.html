@@ -10,6 +10,7 @@
     <script src="../js/jquery-1.7.2.js"></script>
     <script src="../layui/layui.js"></script>
     <script src="/js/i18n.js"></script>
+    <script src="/js/dialog.js"></script>
 </head>
 <body class="layui-bg-gray">
 <div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
@@ -110,7 +111,7 @@ layui.use(['form'], function () {
     console.log(rasult);
     $.post("minus.php?q=" + query, { name: rasult },
       function () {
-        layer.alert("保存成功", function () { window.close(); });
+        layer.alert("保存成功", function () { closeSelf(); });
       });
     return false;
   });

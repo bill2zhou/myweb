@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../layui/css/layui.css" media="all">
     <script src="../layui/layui.js"></script>
     <script src="/js/i18n.js"></script>
+    <script src="/js/dialog.js"></script>
 </head>
 <body class="layui-bg-gray">
 <div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
@@ -87,7 +88,7 @@ layui.use(['form'], function () {
     console.log(rasult);
     $.post("../php/proben.php", { name: rasult },
       function () {
-        layer.alert("保存成功", function () { window.close(); });
+        layer.alert("保存成功", function () { closeSelf(); });
       });
     return false;
   });

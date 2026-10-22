@@ -170,6 +170,7 @@
 
 <script src="../layui/layui.js"></script>
 <script src="/js/i18n.js"></script>
+<script src="/js/dialog.js"></script>
 
 <script>
 
@@ -270,7 +271,7 @@ layui.use(['form','jquery','layer'], function(){
      function(data){
    // var obj = JSON.parse(data); 
      console.log(data);
-	 layer.alert("保存成功",function(){ window.close(); });	
+	 layer.alert("保存成功", function(){ closeSelf(); });
     });
     return false;
   }); 

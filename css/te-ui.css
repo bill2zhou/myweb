@@ -1,0 +1,163 @@
+/*!
+ * TE 管理系统公共界面样式（manage / maintain 等后台页面共用）
+ * 依赖：layui.css 先加载
+ */
+
+:root{
+  --brand:#0f766e;
+  --brand-light:#14b8a6;
+  --ink:#1f2d3d;
+  --ink-2:#64748b;
+  --line:#e5ebf2;
+  --bg:#f1f5f9;
+  --card:#ffffff;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(15,42,72,.05), 0 10px 26px -14px rgba(15,42,72,.25);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  background-image:radial-gradient(1000px 380px at 8% -12%, #e2f4f1 0, rgba(226,244,241,0) 62%);
+  color:var(--ink);
+  font:14px/1.6 "PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+.app{display:flex;flex-direction:column;min-height:100vh;max-width:1680px;margin:0 auto;padding:20px 22px 26px}
+
+/* ---------- 顶部标题 ---------- */
+.app-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:13px}
+.brand-mark{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font:600 15px/1 "Helvetica Neue",Arial;letter-spacing:.5px;
+  background:linear-gradient(135deg,#0f766e,#2dd4bf);box-shadow:0 8px 18px -8px rgba(13,148,136,.95)}
+.brand h1{margin:0;font-size:19px;font-weight:600;letter-spacing:.3px}
+.brand p{margin:1px 0 0;font-size:11px;color:var(--ink-2);letter-spacing:1.4px;text-transform:uppercase}
+.header-meta{font-size:12px;color:var(--ink-2)}
+.header-meta .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#22c55e;margin-right:6px;vertical-align:1px}
+.header-meta .sep{color:#cbd5e1;margin:0 8px}
+
+/* ---------- 卡片 / 工具栏 ---------- */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.toolbar{padding:16px 18px 2px;margin-bottom:16px;flex:0 0 auto}
+.toolbar .layui-form-item{margin-bottom:14px}
+.toolbar .layui-form-label{width:auto;padding:0 10px 0 0;line-height:34px;font-size:13px;color:var(--ink-2);text-align:left}
+.toolbar .layui-input-inline{margin-right:0}
+.toolbar .layui-input,
+.toolbar .layui-form-select .layui-input{
+  height:34px;line-height:32px;border-radius:8px;border-color:#dde5ef;background:#fbfdff;
+  font-size:13px;color:#243449;transition:border-color .15s, box-shadow .15s;
+}
+.toolbar .layui-input:hover{border-color:#9fd8d1}
+.toolbar .layui-input:focus{border-color:var(--brand-light);box-shadow:0 0 0 3px rgba(20,184,166,.12)}
+.toolbar .layui-form-select dl{top:37px;border-radius:10px;border-color:#e2e9f2;box-shadow:0 12px 26px -14px rgba(15,42,72,.35)}
+.toolbar .layui-form-select dl dd.layui-this{background:var(--brand);color:#fff}
+.toolbar .layui-form-select .layui-edge{right:12px}
+
+.toolbar .layui-btn{height:34px;line-height:34px;padding:0 16px;border-radius:8px;font-size:13px;box-shadow:none;transition:all .15s}
+.toolbar .layui-btn + .layui-btn{margin-left:8px}
+.toolbar .layui-btn-sm{height:32px;line-height:32px;padding:0 14px;font-size:12.5px}
+.toolbar .layui-btn .layui-icon{font-size:13px;margin-right:5px;position:relative;top:1px}
+.toolbar .layui-btn-primary{border-color:#d7dfe9;background:#fff;color:#41536b}
+.toolbar .layui-btn-primary:hover{border-color:#9fd8d1;color:var(--brand)}
+.toolbar .actions{margin-top:2px;padding-top:13px;border-top:1px dashed #e6edf5}
+
+/* ---------- 结果区 ---------- */
+.result{overflow:hidden;display:flex;flex-direction:column;flex:1 1 auto;min-height:360px}
+.result-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:13px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fff,#f9fbfe);flex:0 0 auto}
+.result-title{display:flex;align-items:center;gap:9px;margin:0;font-size:15px;font-weight:600;color:#1b2a3d}
+.result-title::before{content:"";width:3px;height:15px;border-radius:2px;background:linear-gradient(#2dd4bf,#0f766e)}
+.meta{font-size:12px;font-weight:400;color:var(--ink-2)}
+.legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+.legend-item{display:inline-flex;align-items:center;gap:6px}
+.legend-item i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.legend-item.ok i{background:#dcf6e4;border:1px solid #a8dfb8}
+.legend-item.warn i{background:#fdf3c5;border:1px solid #e6d078}
+.legend-item.danger i{background:#fce0de;border:1px solid #eea9a6}
+
+.result-wrap{position:relative;flex:1 1 auto;min-height:0}
+.result-body{height:100%;min-height:280px;overflow:auto;padding:0}
+.empty{padding:70px 18px;text-align:center;color:#94a3b8;font-size:13px}
+
+/* 后端返回的提示 / 空数据 */
+#txtHint .layui-text{padding:14px 4px;color:#64748b;font-size:13px}
+#txtHint .layui-elem-quote{display:block;margin:0 0 2px;padding:11px 16px;border-left:3px solid var(--brand-light);
+  border-radius:10px;background:#f1f8f7;color:#255b57;font-size:13px;line-height:1.9}
+#txtHint .layui-elem-quote strong{color:#0f766e}
+#txtHint .result-empty{padding:56px 18px !important;text-align:center;color:#94a3b8 !important;font-size:13px}
+#txtHint .result-count{display:block;padding:12px 8px 16px !important;text-align:right !important;color:#94a3b8 !important;font-size:12px}
+
+/* ---------- 后端返回的表格（#txtHint 内） ---------- */
+#txtHint table.layui-table{width:100%;min-width:1080px;margin:0;border:0;background:#fff}
+#txtHint table th,
+#txtHint table td{padding:9px 10px;font-size:13px;text-align:left;vertical-align:middle;color:#3b4a5f;
+  border-bottom:1px solid #eff3f8;word-break:break-word;white-space:normal}
+#txtHint table thead th,
+#txtHint table tr:first-child th{position:sticky;top:0;z-index:3;background:#f5f8fc;color:#243449;
+  font-weight:600;font-size:12.5px;white-space:nowrap;border-bottom:1px solid #e3eaf3}
+#txtHint table thead th{z-index:4}
+#txtHint table tbody th,
+#txtHint table tr:not(:first-child) th{font-weight:400;color:#3b4a5f}
+#txtHint table tbody tr:nth-child(even) td,
+#txtHint table tbody tr:nth-child(even) th,
+#txtHint table tr:nth-child(even) td,
+#txtHint table tr:nth-child(even) th{background-color:#fafcff}
+#txtHint table tbody tr:hover td,
+#txtHint table tbody tr:hover th,
+#txtHint table tr:hover td,
+#txtHint table tr:hover th{background-color:#f0f8f7}
+
+/* 备品库存状态：覆盖后端的霓虹色，改为柔和底色+深色文字，语义不变 */
+#txtHint table td[style*="00ff33" i]{background:#dcf6e4 !important;color:#146c37 !important;font-weight:600}
+#txtHint table td[style*="ffff05" i]{background:#fdf3c5 !important;color:#8a6a00 !important;font-weight:600}
+#txtHint table td[style*="cc0000" i]{background:#fce0de !important;color:#b02a1c !important;font-weight:600}
+
+/* 表格内操作按钮（普通 input 在前，layui-btn 变体在后，保证后者生效） */
+/* 操作列按内容自适应，避免后端给的 5% 窄列把按钮挤扁 */
+#txtHint table th:has(> input[type="button"]),
+#txtHint table td:has(> input[type="button"]),
+#txtHint table td:has(> button){width:auto !important;min-width:62px;text-align:center;white-space:nowrap}
+#txtHint table .layui-btn,
+#txtHint table input[type="button"]{height:24px;line-height:22px;padding:0 7px;font-size:11.5px;border-radius:999px;box-shadow:none;white-space:nowrap}
+#txtHint table input[type="button"]{border:1px solid #dfe6f0;background:#fff;color:#41536b;cursor:pointer;min-width:0}
+#txtHint table input[type="button"]:hover{border-color:#9fd8d1;background:#f7fdfc}
+#txtHint table input.layui-btn,
+#txtHint table button.layui-btn{background:#e9f6f4;color:#0b7a70;border:1px solid #bfe4de}
+#txtHint table input.layui-btn:hover,
+#txtHint table button.layui-btn:hover{background:#d9f0ec}
+#txtHint table input.layui-btn-danger,
+#txtHint table button.layui-btn-danger{background:#fdeceb;color:#c0392b;border-color:#f4c8c5}
+#txtHint table input.layui-btn-danger:hover,
+#txtHint table button.layui-btn-danger:hover{background:#fbdcd9}
+#txtHint table input.layui-btn-primary,
+#txtHint table button.layui-btn-primary{background:#f4f7fb;color:#41536b;border-color:#dfe6f0}
+#txtHint table input.layui-btn-primary:hover,
+#txtHint table button.layui-btn-primary:hover{background:#e9eef6;border-color:#c6d3e4}
+
+/* ---------- 加载遮罩 ---------- */
+.loading-mask{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:rgba(255,255,255,.6);z-index:10;font-size:12px;color:var(--brand)}
+.loading-mask.show{display:flex}
+.spinner{width:30px;height:30px;border-radius:50%;border:3px solid #d6ece8;border-top-color:var(--brand);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- 页面级微调 ---------- */
+/* 备品管理：日期 / 物品 / 编号 / 型號 等短列不换行 */
+body.page-manage #txtHint table td:nth-child(-n+4){white-space:nowrap}
+/* 维护管理：故障描述等长文本列按 30% 折行更易读 */
+body.page-maintain #txtHint table td:nth-child(n+5){min-width:120px}
+
+@media (max-width:720px){
+  .app{padding:14px 12px 22px}
+  .brand h1{font-size:17px}
+  .toolbar .layui-inline{display:flex;align-items:center;flex-wrap:wrap;width:100%;margin:0 0 10px}
+  .toolbar .layui-input-inline{width:auto !important;flex:1 1 auto}
+  .result-wrap{min-height:320px}
+  .result-body{min-height:0}
+  .legend{gap:10px}
+  #txtHint table th,#txtHint table td{padding:8px 6px;font-size:12px}
+}

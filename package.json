@@ -1,7 +1,7 @@
 {
   "name": "te-myweb",
   "productName": "TE-Server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TE 生产管理系统（Electron 桌面版 / 内置 Node.js HTTP 服务 / SQLite3）",
   "author": "TE",
   "license": "MIT",
@@ -73,7 +73,8 @@
           "!data/*.db",
           "!data/*.db-shm",
           "!data/*.db-wal",
-          "!data/.seeded"
+          "!data/.seeded",
+          "!search/web-proxy/.cache/**"
         ]
       }
     ],

@@ -13,6 +13,7 @@
   <script src="../js/jquery-1.7.2.js"></script>   
 <script src="../layui/layui.js"></script>
 <script src="/js/i18n.js"></script>
+<script src="/js/dialog.js"></script>
 </head>
 <body class="layui-bg-gray">
 <div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
@@ -172,7 +173,7 @@ layui.use(['form','jquery','layer'], function(){
      function(data){
    // var obj = (typeof data === 'string' ? JSON.parse(data) : data); 
      console.log(data);
-	 layer.alert("保存成功",function(){ window.close(); });	
+	 layer.alert("保存成功", function(){ closeSelf(); });
     });
     return false;
   }); 

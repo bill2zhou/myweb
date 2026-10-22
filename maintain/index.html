@@ -1,250 +1,346 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="refresh" content="1800;url=index.html">
   <title>TE-Maintain管理系统</title>
-  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
   <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="../css/te-ui.css">
   <script src="../layui/layui.js"></script>
   <script src="/js/i18n.js"></script>
-  <script>
-layui.use(['form', 'laydate'], function () {
-  var laydate = layui.laydate;
-  var form = layui.form;
-
-  laydate.render({ elem: '#StartTime' });
-  laydate.render({ elem: '#EndTime' });
-  form.render();
-});
- 
-function Serach(){
-			var st=StartTime.value; //直接通过id名获取value值，但是如果写 var input2=input2.value; alert(input2)则无效。
-			var et=EndTime.value; 
-			var ln=document.getElementById("line").value; 
-			var tm=document.getElementById("team").value; 
-			var str=tm+"_"+ln+"_"+st+"_"+et;			
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            document.getElementById("txtHint").innerHTML=xmlhttp.responseText;
-        }
-    }		
-        xmlhttp.open("POST","read.php?q="+str,true);
-        xmlhttp.send();
-}
-
-
-function Vdelete(){
-			var st=StartTime.value; //直接通过id名获取value值，但是如果写 var input2=input2.value; alert(input2)则无效。
-			var et=EndTime.value; 
-			var ln=document.getElementById("line").value; 
-			var tm=document.getElementById("team").value; 
-			var str=tm+"_"+ln+"_"+st+"_"+et;			
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            document.getElementById("txtHint").innerHTML=xmlhttp.responseText;
-        }
-    }		
-        xmlhttp.open("POST","read_del.php?q="+str,true);
-        xmlhttp.send();
-}
-
-
-
-
-
-
-function SerachSN(){
-			var strsn=sn.value; //直接通过id名获取value值，但是如果写 var input2=input2.value; alert(input2)则无效。
-			var tm=document.getElementById("team").value; 
-            var strsn=tm+'_'+strsn;
-            
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            document.getElementById("txtHint").innerHTML=xmlhttp.responseText;
-        }
-    }		
-        xmlhttp.open("POST","readseach.php?q="+strsn,true);
-        xmlhttp.send();
-}
-
-function out(){	
-          window.location.href="export.php";
-		}
-function Creat(){
-        window.open('from.html','newwindow','height=600,width=500,top=50,left=50,toobar=no,menubar=no,scrollbars=yes,resizable=no,location=no,status=no');
-      }	 
-function Vcharts(){
-        window.location.href="charttry.php";
-      }	 
-</script>
-
 </head>
-<body class="layui-bg-gray">
+<body class="page-maintain">
 
-<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
-  <div class="layui-card">
-    <div class="layui-card-header">(CD)TE-Maintain管理系统</div>
-    <div class="layui-card-body">
-      <div class="layui-form">
-        <div class="layui-form-item">
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:60px">部门</label>
-            <div class="layui-input-inline" style="width:110px">
-              <select name="TEAMS" id="team">
-                <option value="">部门:</option>
-                <option value="AOI">AOI</option>
-                <option value="ATE">ATE</option>
-                <option value="FT">FT</option>
-              </select>
-            </div>
-          </div>
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:60px">线别</label>
-            <div class="layui-input-inline" style="width:110px">
-              <select name="LINES" id="line">
-                <option value="">线别:</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-                <option value="F">F</option>
-                <option value="G">G</option>
-                <option value="H">H</option>
-                <option value="I">I</option>
-                <option value="ALL">ALL</option>
-              </select>
-            </div>
-          </div>
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:60px">日期起</label>
-            <div class="layui-input-inline" style="width:150px">
-              <input id="StartTime" type="text" class="layui-input" placeholder="开始日期" autocomplete="off">
-            </div>
-            <label class="layui-form-label" style="width:40px">止</label>
-            <div class="layui-input-inline" style="width:150px">
-              <input id="EndTime" type="text" class="layui-input" placeholder="结束日期" autocomplete="off">
-            </div>
+<div class="app">
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">TE</div>
+      <div class="brand-text">
+        <h1>TE-Maintain管理系统</h1>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="dot"></span><span id="updated">等待查询</span>
+      <span class="sep">|</span>每 30 分钟自动刷新
+    </div>
+  </header>
+
+  <section class="panel toolbar">
+    <div class="layui-form">
+      <div class="layui-form-item">
+        <div class="layui-inline">
+          <label class="layui-form-label" for="team">部门</label>
+          <div class="layui-input-inline" style="width:130px">
+            <select name="TEAMS" id="team">
+              <option value="">部门:</option>
+              <option value="AOI">AOI</option>
+              <option value="ATE">ATE</option>
+              <option value="FT">FT</option>
+            </select>
           </div>
         </div>
-        <div class="layui-form-item">
-          <div class="layui-inline">
-            <button id="btn-search" type="button" class="layui-btn layui-btn-sm" onclick="Serach()">查询记录</button>
-            <button id="btn-create" type="button" class="layui-btn layui-btn-sm layui-btn-normal" onclick="Creat()">创建记录</button>
-            <button id="btn-c" type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="Vdelete()">刪除</button>
-            <button id="btn-output" type="button" class="layui-btn layui-btn-sm layui-btn-warm" onclick="out()">导出数据</button>
-            <button id="btn-chart" type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="Vcharts()">图表</button>
-            <button id="btn-back" type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="back()">退出</button>
+        <div class="layui-inline">
+          <label class="layui-form-label" for="line">线别</label>
+          <div class="layui-input-inline" style="width:120px">
+            <select name="LINES" id="line">
+              <option value="">线别:</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
+              <option value="G">G</option>
+              <option value="H">H</option>
+              <option value="I">I</option>
+              <option value="ALL">ALL</option>
+            </select>
           </div>
         </div>
-        <div class="layui-form-item">
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:80px">故障搜索</label>
-            <div class="layui-input-inline" style="width:200px">
-              <input id="sn" type="text" class="layui-input" placeholder="请输入查询内容" autocomplete="off">
-            </div>
-            <button id="btn-search-sn" type="button" class="layui-btn layui-btn-sm" onclick="SerachSN()">搜索记录</button>
+        <div class="layui-inline">
+          <label class="layui-form-label" for="StartTime">日期起</label>
+          <div class="layui-input-inline" style="width:160px">
+            <input id="StartTime" type="text" class="layui-input" placeholder="开始日期" autocomplete="off">
           </div>
+          <label class="layui-form-label" for="EndTime">止</label>
+          <div class="layui-input-inline" style="width:160px">
+            <input id="EndTime" type="text" class="layui-input" placeholder="结束日期" autocomplete="off">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <button type="button" class="layui-btn" onclick="Serach()">
+            <i class="layui-icon layui-icon-search"></i>查询记录
+          </button>
         </div>
       </div>
-      <div id="txtHint" class="layui-text" style="min-height:600px">请选择部门线别...</div>
+
+      <div class="layui-form-item">
+        <div class="layui-inline">
+          <label class="layui-form-label" for="sn">故障搜索</label>
+          <div class="layui-input-inline" style="width:240px">
+            <input id="sn" type="text" class="layui-input" placeholder="输入故障描述关键字，回车搜索" autocomplete="off">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <button type="button" class="layui-btn layui-btn-normal" onclick="SerachSN()">
+            <i class="layui-icon layui-icon-search"></i>搜索记录
+          </button>
+        </div>
+      </div>
+
+      <div class="layui-form-item actions">
+        <div class="layui-inline">
+          <button type="button" class="layui-btn layui-btn-sm" onclick="Creat()">
+            <i class="layui-icon layui-icon-add-1"></i>创建记录
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="Vdelete()">
+            <i class="layui-icon layui-icon-delete"></i>刪除
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-warm" onclick="out()">
+            <i class="layui-icon layui-icon-download-circle"></i>导出数据
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="Vcharts()">
+            <i class="layui-icon layui-icon-chart"></i>图表
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="back()">
+            <i class="layui-icon layui-icon-return"></i>退出
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <section class="panel result">
+    <div class="result-head">
+      <h2 class="result-title">查询结果 <span id="meta" class="meta"></span></h2>
+      <div class="legend">
+        <span class="legend-item">按「刪除」载入记录后，点击行尾的「刪除」即可移除</span>
+      </div>
+    </div>
+    <div class="result-wrap">
+      <div id="txtHint" class="result-body"><div class="empty">请选择部门、线别后查询…</div></div>
+      <div id="loading" class="loading-mask"><div class="spinner"></div><span>加载中</span></div>
+    </div>
+  </section>
 </div>
- <script>
 
-	  
-function delet(a){
-        var rtn=confirm("是否確定刪除？")
-			var st=StartTime.value; //直接通过id名获取value值，但是如果写 var input2=input2.value; alert(input2)则无效。
-			var et=EndTime.value; 
-			var ln=document.getElementById("line").value; 
-			var tm=document.getElementById("team").value; 
-			var str=tm+"_"+ln+"_"+st+"_"+et;			
-		
-		
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-			repost=new XMLHttpRequest();
-			
-		    repost.onreadystatechange=function(){
-            if (repost.readyState==4 && repost.status==200)
-                  {
-            document.getElementById("txtHint").innerHTML=repost.responseText;		    
-                  }
-            }		
-	        repost.open("POST","read_del.php?q="+str,true);
-            repost.send();
-			
-			
-			
-			
-			
-        }
-    }		
-	  
-	  if(rtn)
-		{
-		//window.location.href="../php/delet.php?q="+a;
-		 xmlhttp.open("POST","../php/delet.php?q="+a,true);
-		 xmlhttp.send();	
-		 
+<script>
+var hint = document.getElementById('txtHint');
+// 记录最近一次查询地址，弹窗关闭后据此自动刷新结果
+var lastRequestUrl = '';
 
-		}
-	
-       // window.open('from.html','newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
-      }	 
-	  	  
-</script> 
+layui.use(['form', 'laydate'], function () {
+  var laydate = layui.laydate;
+
+  laydate.render({ elem: '#StartTime', type: 'date' });
+  laydate.render({ elem: '#EndTime', type: 'date' });
+
+  layui.form.render();
+});
+
+/* ---------- 通用工具 ---------- */
+function setBusy(on) {
+  var mask = document.getElementById('loading');
+  if (mask) mask.className = on ? 'loading-mask show' : 'loading-mask';
+}
+
+function toast(msg) {
+  if (window.layui && layui.layer) {
+    layui.use('layer', function () { layui.layer.msg(msg, { icon: 0, time: 1800 }); });
+  } else {
+    alert(msg);
+  }
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+function val(id) {
+  var el = document.getElementById(id);
+  return el ? String(el.value || '').replace(/^\s+|\s+$/g, '') : '';
+}
+
+function currentQuery() {
+  return val('team') + '_' + val('line') + '_' + val('StartTime') + '_' + val('EndTime');
+}
+
+function setMeta(info) {
+  document.getElementById('meta').textContent = info || '';
+}
+
+/* 把后端返回的内容渲染到结果区 */
+function render(html) {
+  var info = '';
+
+  // read_del.php：Team:AOI Line:A 2026-10-01----2026-10-05
+  var m = /^\s*Team:([^\s<]*)\s*Line:([^\s<]*)([^<]*)/.exec(html);
+  if (m) {
+    html = html.slice(m[0].length);
+    info = '部门 ' + (m[1] || '-') + ' · 线别 ' + (m[2] || '-');
+    var range = (m[3] || '').replace(/^-+|-+$/g, '').replace(/-{2,}/g, ' ~ ').replace(/\s+/g, '');
+    if (range) info += ' · ' + range;
+    var rows = (html.match(/<tr/g) || []).length;
+    if (rows > 0) info += ' · 共 ' + (rows - 1) + ' 条';
+  } else {
+    // readseach.php：查詢內容:xxx
+    var m2 = /^\s*(?:查詢內容|查询内容)\s*[:：]\s*([^<]*)/.exec(html);
+    if (m2) {
+      html = html.slice(m2[0].length);
+      info = '搜索「' + (m2[1] || '').replace(/^\s+|\s+$/g, '') + '」';
+    }
+  }
+  setMeta(info);
+
+  // 页面顶部不再显示更新时间，这里做空值保护
+  var upd = document.getElementById('updated');
+  if (upd) {
+    var t = new Date();
+    upd.textContent =
+      '更新于 ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) + ':' + pad(t.getSeconds());
+  }
+
+  // 纯文本提示（如未选部门、取值错误）包一层居中容器
+  if (html.indexOf('<') === -1) {
+    hint.innerHTML = '<div class="empty"></div>';
+    hint.firstChild.textContent = html.replace(/^\s+|\s+$/g, '') || '暂无数据';
+    hint.scrollTop = 0;
+    return;
+  }
+
+  hint.innerHTML = html;
+  hint.scrollTop = 0;
+
+  var table = hint.querySelector('table');
+  if (table) {
+    // 表格后面的「共 N 条记录」右对齐
+    var next = table.nextElementSibling;
+    if (next && /layui-text/.test(next.className)) next.className += ' result-count';
+  } else {
+    // 空数据提示居中显示（信息条 layui-elem-quote 保持原样）
+    var kids = hint.children;
+    for (var k = 0; k < kids.length; k++) {
+      var cls = kids[k].className || '';
+      if (/layui-text/.test(cls) && !/layui-elem-quote/.test(cls)) {
+        kids[k].className += ' result-empty';
+      }
+    }
+  }
+}
+
+function request(url) {
+  lastRequestUrl = url;
+  setBusy(true);
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    setBusy(false);
+    if (xhr.status === 200) {
+      render(xhr.responseText);
+    } else {
+      setMeta('');
+      hint.innerHTML = '<div class="empty">查询失败（HTTP ' + xhr.status + '）</div>';
+    }
+  };
+  try {
+    xhr.open('POST', url, true);
+    xhr.send();
+  } catch (e) {
+    setBusy(false);
+    toast('请求失败：' + e.message);
+  }
+}
+
+/* ---------- 查询 ---------- */
+function checkBase() {
+  if (!val('team')) { toast('请先选择部门'); return false; }
+  if (!val('line')) { toast('请先选择线别'); return false; }
+  var st = val('StartTime'), et = val('EndTime');
+  if (st && et && st > et) { toast('时间区间选择错误'); return false; }
+  return true;
+}
+
+function Serach() {
+  if (!checkBase()) return;
+  request('read.php?q=' + encodeURIComponent(currentQuery()));
+}
+
+function Vdelete() {
+  if (!checkBase()) return;
+  request('read_del.php?q=' + encodeURIComponent(currentQuery()));
+}
+
+function SerachSN() {
+  var kw = val('sn');
+  if (!val('team')) return toast('请先选择部门');
+  if (!kw) return toast('请输入查询内容');
+  request('readseach.php?q=' + encodeURIComponent(val('team') + '_' + kw));
+}
+
+function delet(a) {
+  layui.use('layer', function () {
+    layui.layer.confirm('是否確定刪除？', { icon: 3, title: '確認刪除' }, function (index) {
+      layui.layer.close(index);
+      doDelete(a);
+    });
+  });
+}
+
+function doDelete(a) {
+  var q = currentQuery();
+  setBusy(true);
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    setBusy(false);
+    if (xhr.status !== 200) return toast('删除失败（HTTP ' + xhr.status + '）');
+    if (/^Error/i.test(xhr.responseText)) return toast(xhr.responseText);
+    toast('已删除');
+    request('read_del.php?q=' + encodeURIComponent(q));
+  };
+  try {
+    xhr.open('POST', '../php/delet.php?q=' + encodeURIComponent(a), true);
+    xhr.send();
+  } catch (e) {
+    setBusy(false);
+    toast('删除失败：' + e.message);
+  }
+}
+
+/* ---------- 页面跳转 / 弹窗 ---------- */
+function Creat() {
+  layui.use('layer', function () {
+    layui.layer.open({
+      type: 2,
+      title: '创建记录',
+      content: 'from.html',
+      area: ['620px', '88%'],
+      maxmin: true,
+      resize: false,
+      shadeClose: false,
+      end: function () {
+        if (lastRequestUrl) request(lastRequestUrl);
+      }
+    });
+  });
+}
+
+function out() { window.location.href = 'export.php'; }
+function Vcharts() { window.location.href = 'charttry.php'; }
+function back() { window.location.href = '/'; }
+
+/* ---------- 交互增强 ---------- */
+(function () {
+  var sn = document.getElementById('sn');
+  if (sn) {
+    sn.addEventListener('keydown', function (e) {
+      if (e.keyCode === 13) {
+        e.preventDefault();
+        SerachSN();
+      }
+    });
+  }
+})();
+</script>
 </body>
 </html>
-

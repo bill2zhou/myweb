@@ -1,21 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="refresh" content="1800;url=index.html">
   <title>TE-备品管理系统</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
   <link rel="stylesheet" href="../layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="../css/te-ui.css">
   <script src="../layui/layui.js"></script>
   <script src="/js/i18n.js"></script>
   <script src="../js/jquery-1.7.2.js"></script>
-  <script>
-layui.use(['form', 'laydate'], function () {
-  var laydate = layui.laydate;
-  var form = layui.form;
+</head>
+<body class="page-manage">
 
-  laydate.render({ elem: '#StartTime' });
-  laydate.render({ elem: '#EndTime' });
-  form.render();
+<div class="app">
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">TE</div>
+      <div class="brand-text">
+        <h1>TE-备品管理系统</h1>
+        <p>Spare Parts Management</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="dot"></span><span id="updated">等待查询</span>
+      <span class="sep">|</span>每 30 分钟自动刷新
+    </div>
+  </header>
+
+  <section class="panel toolbar">
+    <div class="layui-form">
+      <div class="layui-form-item">
+        <div class="layui-inline">
+          <label class="layui-form-label" for="team">部门</label>
+          <div class="layui-input-inline" style="width:130px">
+            <!-- lay-filter 供 layui 的 select 事件使用；onChange 仅在 layui 未渲染时作兜底 -->
+            <select name="TEAMS" id="team" lay-filter="team" onChange="change()">
+              <option value="">部门:</option>
+              <option value="AOI">AOI</option>
+              <option value="ATE">ATE</option>
+              <option value="FT">FT</option>
+            </select>
+          </div>
+        </div>
+        <div class="layui-inline">
+          <label class="layui-form-label" for="type">物品类别</label>
+          <div class="layui-input-inline" style="width:150px">
+            <select name="TYPES" id="type">
+              <option value="ALL">物品类别:</option>
+              <option value="探針">探針</option>
+              <option value="機臺備品">機臺備品</option>
+              <option value="治具備品">治具備品</option>
+            </select>
+          </div>
+        </div>
+        <div class="layui-inline">
+          <button type="button" class="layui-btn" onclick="Serach()">
+            <i class="layui-icon layui-icon-search"></i>查询记录
+          </button>
+        </div>
+        <div class="layui-inline">
+          <label class="layui-form-label" for="sn">編號查询</label>
+          <div class="layui-input-inline" style="width:190px">
+            <input id="sn" type="text" class="layui-input" placeholder="输入编号，回车查询" autocomplete="off">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <button type="button" class="layui-btn layui-btn-normal" onclick="SerachSN()">
+            <i class="layui-icon layui-icon-search"></i>编号查询
+          </button>
+        </div>
+      </div>
+
+      <div class="layui-form-item actions">
+        <div class="layui-inline">
+          <button type="button" class="layui-btn layui-btn-sm" onclick="New()">
+            <i class="layui-icon layui-icon-add-1"></i>新建物品
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="Del()">
+            <i class="layui-icon layui-icon-delete"></i>刪除物品
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-warm" onclick="verify()">
+            <i class="layui-icon layui-icon-edit"></i>修改記錄
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="out()">
+            <i class="layui-icon layui-icon-download-circle"></i>导出数据
+          </button>
+          <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="back()">
+            <i class="layui-icon layui-icon-return"></i>退出
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel result">
+    <div class="result-head">
+      <h2 class="result-title">查询结果 <span id="meta" class="meta"></span></h2>
+      <div class="legend">
+        <span class="legend-item ok"><i></i>库存充足</span>
+        <span class="legend-item warn"><i></i>等于安全库存</span>
+        <span class="legend-item danger"><i></i>低于安全库存</span>
+      </div>
+    </div>
+    <div class="result-wrap">
+      <div id="txtHint" class="result-body"><div class="empty">请选择部门线别后查询…</div></div>
+      <div id="loading" class="loading-mask"><div class="spinner"></div><span>加载中</span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+var hint = document.getElementById('txtHint');
+// 记录最近一次查询地址，弹窗关闭后据此自动刷新结果
+var lastRequestUrl = '';
+
+layui.use(['form', 'layer'], function () {
+  var form = layui.form;
 
   // 注意：layui 会把 <select> 渲染成自定义下拉，点击选项时只更新原生 select 的
   // value，并不会派发浏览器原生的 change 事件，所以 <select onChange="..."> 永远不会执行。
@@ -25,350 +127,232 @@ layui.use(['form', 'laydate'], function () {
     // 物品类别列表被重建过，必须重新渲染一次，否则页面上显示的还是旧列表
     layui.form.render('select');
   });
+
+  form.render();
 });
- 
-function Serach(){
-			var ty=document.getElementById("type").value; 
-			var tm=document.getElementById("team").value; 
-			
-			var str=tm+"_"+ty;		
-		//console.log(str);	
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            document.getElementById("txtHint").innerHTML=xmlhttp.responseText;
-        }
-    }		
-	 var uri="read.php?q="+str;
-	 var url=encodeURI(uri);
-	   xmlhttp.open("POST",url,true);
-       xmlhttp.send();	 
+
+/* ---------- 通用工具 ---------- */
+function setBusy(on) {
+  var mask = document.getElementById('loading');
+  if (mask) mask.className = on ? 'loading-mask show' : 'loading-mask';
 }
 
-function Del(){
-			var ty=document.getElementById("type").value; 
-			var tm=document.getElementById("team").value; 
-			
-			var str=tm+"_"+ty;		
-		//console.log(str);	
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            document.getElementById("txtHint").innerHTML=xmlhttp.responseText;
-        }
-    }		
-
-	   var uri="read_del.php?q="+str;
-
-	   var url=encodeURI(uri);
-	   xmlhttp.open("POST",url,true);
-       xmlhttp.send();	 
+function toast(msg) {
+  if (window.layui && layui.layer) {
+    layui.use('layer', function () { layui.layer.msg(msg, { icon: 0, time: 1800 }); });
+  } else {
+    alert(msg);
+  }
 }
 
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
-function verify(){
-			var ty=document.getElementById("type").value; 
-			var tm=document.getElementById("team").value; 
-			
-			var str=tm+"_"+ty;		
-		//console.log(str);	
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            document.getElementById("txtHint").innerHTML=xmlhttp.responseText;
-        }
-    }		
-
-	   var uri="read_verify.php?q="+str;
-
-	   var url=encodeURI(uri);
-	   xmlhttp.open("POST",url,true);
-       xmlhttp.send();	 
+function currentQuery() {
+  return document.getElementById('team').value + '_' + document.getElementById('type').value;
 }
 
-
-
-function SerachSN(){
-			var strsn=sn.value; //直接通过id名获取value值，但是如果写 var input2=input2.value; alert(input2)则无效。
-			
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            document.getElementById("txtHint").innerHTML=xmlhttp.responseText;
-        }
-    }		
-        xmlhttp.open("POST","readsn.php?q="+strsn,true);
-        xmlhttp.send();
+function setMeta(info) {
+  document.getElementById('meta').textContent = info || '';
 }
 
+/* 把后端返回的 "Team:AOI Type:ALL" + 表格 渲染到结果区 */
+function render(html) {
+  var info = '';
+  var m = /^\s*Team:([^\s<]*)\s*Type:([^\s<]*)/.exec(html);
+  if (m) {
+    html = html.slice(m[0].length);
+    info = '部门 ' + (m[1] || '-') + ' · 类别 ' + (m[2] === 'ALL' ? '全部' : m[2]);
+    var rows = (html.match(/<tr/g) || []).length;
+    if (rows > 0) info += ' · 共 ' + (rows - 1) + ' 条';
+  }
+  setMeta(info);
 
-function delet(a){
-        var rtn=confirm("是否確定刪除？")
-			var ty=document.getElementById("type").value; 
-			var tm=document.getElementById("team").value; 
-			
-			var str=tm+"_"+ty;				
-		
-		
-	    if (window.XMLHttpRequest)
-    {
-        // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
-        xmlhttp=new XMLHttpRequest();
-    }
-    else
-    {
-        // IE6, IE5 浏览器执行代码
-        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange=function()
-    {
-        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-        {
-            			repost=new XMLHttpRequest();
-			
-		    repost.onreadystatechange=function(){
-            if (repost.readyState==4 && repost.status==200)
-                  {
-            document.getElementById("txtHint").innerHTML=repost.responseText;		    
-                  }
-            }		
-	        repost.open("POST","read_del.php?q="+str,true);
-            repost.send();
-        }
-    }		
-	  
-	  if(rtn)
-		{
-		 xmlhttp.open("POST","delet.php?q="+a,true);
-		 xmlhttp.send();	
-		 
+  var t = new Date();
+  document.getElementById('updated').textContent =
+    '更新于 ' + pad(t.getHours()) + ':' + pad(t.getMinutes()) + ':' + pad(t.getSeconds());
 
-		}
-	
-       // window.open('from.html','newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
-      }	 
+  hint.scrollTop = 0;
 
-
-
-function modify(a){
-		window.open('verify.html?'+a,'newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=yes,resizable=no,location=no,status=no');
-   
-        }	 	  
-	  
-	  
-	  
-function out(){	
-          window.location.href="export.php";
-		}
-		
-
-
-</script>
-
-</head>
-<body class="layui-bg-gray">
-
-<div class="layui-fluid" style="padding-top:15px;padding-bottom:15px">
-  <div class="layui-card">
-    <div class="layui-card-header">TE-备品管理系统</div>
-    <div class="layui-card-body">
-      <div class="layui-form">
-        <div class="layui-form-item">
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:60px">部门</label>
-            <div class="layui-input-inline" style="width:110px">
-              <!-- lay-filter 供 layui 的 select 事件使用；onChange 仅在 layui 未渲染时作兜底 -->
-              <select name="TEAMS" id="team" lay-filter="team" onChange="change()">
-                <option value="">部门:</option>
-                <option value="AOI">AOI</option>
-                <option value="ATE">ATE</option>
-                <option value="FT">FT</option>
-              </select>
-            </div>
-          </div>
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:80px">物品类别</label>
-            <div class="layui-input-inline" style="width:130px">
-              <select name="TYPES" id="type">
-                <option value="ALL">物品类别:</option>
-                <option value="探針">探針</option>
-                <option value="機臺備品">機臺備品</option>
-                <option value="治具備品">治具備品</option>
-              </select>
-            </div>
-          </div>
-          <div class="layui-inline">
-            <button id="btn-search" type="button" class="layui-btn layui-btn-sm" onclick="Serach()">查询记录</button>
-          </div>
-          <div class="layui-inline">
-            <label class="layui-form-label" style="width:80px">編號查询</label>
-            <div class="layui-input-inline" style="width:150px">
-              <input id="sn" type="text" class="layui-input" placeholder="请输入编号" autocomplete="off">
-            </div>
-            <button id="btn-search-sn" type="button" class="layui-btn layui-btn-sm" onclick="SerachSN()">查询记录</button>
-          </div>
-        </div>
-        <div class="layui-form-item">
-          <div class="layui-inline">
-            <button id="btn-create" type="button" class="layui-btn layui-btn-sm layui-btn-normal" onclick="New()">新建物品</button>
-            <button id="btn-del" type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="Del()">刪除物品</button>
-            <button id="btn-verify" type="button" class="layui-btn layui-btn-sm layui-btn-warm" onclick="verify()">修改記錄</button>
-            <button id="btn-output" type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="out()">导出数据</button>
-            <button id="btn-back" type="button" class="layui-btn layui-btn-sm layui-btn-primary" onclick="back()">退出</button>
-          </div>
-        </div>
-      </div>
-      <div id="txtHint" class="layui-text" style="min-height:600px">请选择部门线别...</div>
-    </div>
-  </div>
-</div>
-
-
- <script>
- //   var tm = document.getElementById("team");
-//	console.log(tm);
-  // 选项文字跟随界面语言（value 必须保持中文枚举，后端按它查询）
-  function opt(text, value){
-    var t = (window.TE_I18N && window.TE_I18N.t) ? window.TE_I18N.t(text) : text;
-    return new Option(t, value);
+  // 没有表格时（无数据 / 错误提示）统一居中显示，避免文字贴边
+  if (html.indexOf('<table') === -1) {
+    hint.innerHTML = '<div class="empty"></div>';
+    hint.firstChild.textContent = html.replace(/<[^>]*>/g, '').replace(/^\s+|\s+$/g, '') || '暂无数据';
+    return;
   }
 
-  function change(){
-   var x = document.getElementById("team");
-   var y = document.getElementById("type");
+  hint.innerHTML = html;
 
-   if(x.selectedIndex == 1){
-     y.options.length = 0; 
-	 y.options.add(opt("物品类别", "ALL"));
-	 y.options.add(opt("機臺備品", "機臺備品"));
-   }
-   if(x.selectedIndex == 2){
-     y.options.length = 0; 
-	 y.options.add(opt("物品类别", "ALL"));
-	 y.options.add(opt("機臺備品", "機臺備品"));
-	 y.options.add(opt("探針", "探針"));
-	 y.options.add(opt("治具備品", "治具備品"));
-   }
-
-   if(x.selectedIndex == 3){
-     y.options.length = 0; 
-	 y.options.add(opt("物品类别", "ALL"));
-	 y.options.add(opt("機臺備品", "機臺備品"));
-	 y.options.add(opt("探針", "探針"));
-	 y.options.add(opt("治具備品", "治具備品"));
-   }   
-   
-  
-   }  
-   
-	
-    function Creat(a){
-	window.open("from1.html?"+a,'newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
-     }	 
-	function edit(a){
-	  	window.open('edit1.html?'+a,'newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
-      }	  
-	  	 
-	function minus(a){
-	  //	console.log(a);
-		window.open('minus.html?'+a,'newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
-      }	 	
-	
-	
-	function add(a){
-	  //	console.log(a);
-		window.open('add.html?'+a,'newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
-      }	 	
-		
-	
-	
-	
-    function New(){
-	window.open("new.html",'newwindow','height=600,width=400,top=50,left=50,toobar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
-     }	 
-	 
-	 	 
-	 
-	 
-	 
-	 
-	function Vcharts(){
-        window.location.href="charttry.php";
-      }	 
-	function back(){
-	
-	  window.location.href="/";
-
+  // 后端部分接口（read/read_del/read_verify）会在每行末尾多输出一个空 <td>，
+  // 造成表格列错位，这里按表头列数把多余的空单元格裁掉。
+  var table = hint.querySelector('table');
+  if (table && table.rows.length > 1) {
+    var cols = table.rows[0].cells.length;
+    for (var i = 1; i < table.rows.length; i++) {
+      var row = table.rows[i];
+      while (row.cells.length > cols) {
+        var last = row.cells[row.cells.length - 1];
+        if (!last || (last.textContent || '').replace(/\s/g, '') !== '') break;
+        last.parentNode.removeChild(last);
       }
-	
- 
-
-	
-function tip(a){
-layui.use('layer', function(){
-  var layer = layui.layer;
-  // 关闭方式：弹窗右上角 ×、点击遮罩或按 Esc。
-  // 原先这里监听遮罩的 mouseout 自动关闭，结果鼠标一移到弹窗上就被关掉，根本看不清内容。
-  var w = layer.open({
-        type: 2
-        ,content: 'veiw.html?'+a
-        ,title: '説明'
-        ,area: ['375px', '500px']
-        ,maxmin: true
-        ,shadeClose: true
-      });
-});
+    }
+  }
 }
-	
 
-	  	  
-	  
-		  
-</script> 
+function request(url) {
+  lastRequestUrl = url;
+  setBusy(true);
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    setBusy(false);
+    if (xhr.status === 200) {
+      render(xhr.responseText);
+    } else {
+      setMeta('');
+      hint.innerHTML = '<div class="empty">查询失败（HTTP ' + xhr.status + '）</div>';
+    }
+  };
+  try {
+    xhr.open('POST', url, true);
+    xhr.send();
+  } catch (e) {
+    setBusy(false);
+    toast('请求失败：' + e.message);
+  }
+}
+
+/* ---------- 查询 ---------- */
+function Serach() {
+  if (!document.getElementById('team').value) return toast('请先选择部门');
+  request('read.php?q=' + encodeURIComponent(currentQuery()));
+}
+
+function Del() {
+  if (!document.getElementById('team').value) return toast('请先选择部门');
+  request('read_del.php?q=' + encodeURIComponent(currentQuery()));
+}
+
+function verify() {
+  if (!document.getElementById('team').value) return toast('请先选择部门');
+  request('read_verify.php?q=' + encodeURIComponent(currentQuery()));
+}
+
+function SerachSN() {
+  var sn = (document.getElementById('sn').value || '').replace(/^\s+|\s+$/g, '');
+  if (!sn) return toast('请输入编号');
+  request('readsn.php?q=' + encodeURIComponent(sn));
+}
+
+/* ---------- 记录操作 ---------- */
+function delet(a) {
+  layui.use('layer', function () {
+    layui.layer.confirm('是否確定刪除？', { icon: 3, title: '確認刪除' }, function (index) {
+      layui.layer.close(index);
+      doDelete(a);
+    });
+  });
+}
+
+function doDelete(a) {
+  var q = currentQuery();
+  setBusy(true);
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    setBusy(false);
+    if (xhr.status !== 200) return toast('删除失败（HTTP ' + xhr.status + '）');
+    if (/^Error/i.test(xhr.responseText)) return toast(xhr.responseText);
+    toast('已删除');
+    request('read_del.php?q=' + encodeURIComponent(q));
+  };
+  try {
+    xhr.open('POST', 'delet.php?q=' + encodeURIComponent(a), true);
+    xhr.send();
+  } catch (e) {
+    setBusy(false);
+    toast('删除失败：' + e.message);
+  }
+}
+
+/* ---------- 统一弹窗：所有子页面都用 layer iframe 打开 ---------- */
+function openDialog(file, arg, title, area) {
+  layui.use('layer', function () {
+    layui.layer.open({
+      type: 2,
+      title: title,
+      content: file + (arg ? '?' + arg : ''),
+      area: area || ['580px', '90%'],
+      maxmin: true,
+      resize: false,
+      shadeClose: false,
+      end: function () {
+        // 关闭后自动刷新当前查询结果，便于立即看到数据变化
+        if (lastRequestUrl) request(lastRequestUrl);
+      }
+    });
+  });
+}
+
+function New()     { openDialog('new.html', '', '新建物品'); }
+function modify(a) { openDialog('verify.html', a, '修改記錄'); }
+function Creat(a)  { openDialog('from1.html', a, '新建記錄'); }
+function edit(a)   { openDialog('edit1.html', a, '編輯記錄'); }
+
+function minus(a)  { openDialog('minus.html', a, '出庫'); }
+function add(a)    { openDialog('add.html', a, '入庫'); }
+
+function out() { window.location.href = 'export.php'; }
+function Vcharts() { window.location.href = 'charttry.php'; }
+function back() { window.location.href = '/'; }
+
+function tip(a) {
+  layui.use('layer', function () {
+    layui.layer.open({
+      type: 2,
+      content: 'veiw.html?' + a,
+      title: '説明',
+      area: ['375px', '500px'],
+      maxmin: true,
+      shadeClose: true
+    });
+  });
+}
+
+/* ---------- 部门 → 物品类别联动 ---------- */
+// 选项文字跟随界面语言（value 必须保持中文枚举，后端按它查询）
+function opt(text, value) {
+  var t = (window.TE_I18N && window.TE_I18N.t) ? window.TE_I18N.t(text) : text;
+  return new Option(t, value);
+}
+
+function change() {
+  var x = document.getElementById('team');
+  var y = document.getElementById('type');
+  if (!x || !y) return;
+
+  if (x.selectedIndex === 0) return;
+
+  y.options.length = 0;
+  y.options.add(opt('物品类别', 'ALL'));
+  y.options.add(opt('機臺備品', '機臺備品'));
+  if (x.selectedIndex >= 2) {
+    y.options.add(opt('探針', '探針'));
+    y.options.add(opt('治具備品', '治具備品'));
+  }
+}
+
+/* ---------- 交互增强 ---------- */
+(function () {
+  var sn = document.getElementById('sn');
+  if (sn) {
+    sn.addEventListener('keydown', function (e) {
+      if (e.keyCode === 13) {
+        e.preventDefault();
+        SerachSN();
+      }
+    });
+  }
+})();
+</script>
 </body>
 </html>
-
